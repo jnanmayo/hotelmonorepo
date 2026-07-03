@@ -1,0 +1,357 @@
+// =============================================================================
+// Modules 53-62: Finance, Payroll, HR
+// =============================================================================
+
+model Account {
+  id          String          @id @default(uuid()) @db.Uuid
+  hotelId     String          @map("hotel_id") @db.Uuid
+  code        String          @db.VarChar(20)
+  name        String          @db.VarChar(255)
+  type        AccountType
+  subType     AccountSubType? @map("sub_type")
+  parentId    String?         @map("parent_id") @db.Uuid
+  costCenterId String?        @map("cost_center_id") @db.Uuid
+  level       Int             @default(0)
+  sortOrder   Int             @default(0) @map("sort_order")
+  balance     Decimal         @default(0) @db.Decimal(14, 2)
+  openingBalance Decimal      @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  isSystem    Boolean         @default(false) @map("is_system")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?       @map("deleted_at") @db.Timestamptz
+  createdBy   String?         @map("created_by") @db.Uuid
+  updatedBy   String?         @map("updated_by") @db.Uuid
+  deletedBy   String?         @map("deleted_by") @db.Uuid
+  isActive    Boolean         @default(true) @map("is_active")
+  version     Int             @default(1)
+
+  hotel        Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  parent       Account?     @relation("AccountHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Account[]    @relation("AccountHierarchy")
+  costCenter   CostCenter?  @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  journalLines JournalLine[]
+  expenses     Expense[]
+  incomes      Income[]
+  bankAccounts FinBankAccount[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId, type])
+  @@index([hotelId, parentId])
+  @@map("accounts")
+}
+
+model ExpenseCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  code      String   @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  expenses Expense[]
+
+  @@unique([hotelId, code])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id            String            @id @default(uuid()) @db.Uuid
+  hotelId       String            @map("hotel_id") @db.Uuid
+  categoryId    String            @map("category_id") @db.Uuid
+  accountId     String?           @map("account_id") @db.Uuid
+  costCenterId  String?           @map("cost_center_id") @db.Uuid
+  expenseNumber String            @map("expense_number") @db.VarChar(30)
+  status        ExpenseStatus     @default(DRAFT)
+  approvalStatus FinApprovalStatus @default(DRAFT) @map("approval_status")
+  amount        Decimal           @db.Decimal(14, 2)
+  gstAmount     Decimal           @default(0) @map("gst_amount") @db.Decimal(14, 2)
+  tdsAmount     Decimal           @default(0) @map("tds_amount") @db.Decimal(14, 2)
+  description   String?           @db.Text
+  department    String?           @db.VarChar(100)
+  expenseDate   DateTime          @default(now()) @map("expense_date") @db.Date
+  vendorName    String?           @map("vendor_name") @db.VarChar(255)
+  sourceModule  String?           @map("source_module") @db.VarChar(50)
+  sourceId      String?           @map("source_id") @db.Uuid
+  receiptUrl    String?           @map("receipt_url") @db.VarChar(1000)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?         @map("deleted_at") @db.Timestamptz
+  createdBy     String?           @map("created_by") @db.Uuid
+  updatedBy     String?           @map("updated_by") @db.Uuid
+  deletedBy     String?           @map("deleted_by") @db.Uuid
+  isActive      Boolean           @default(true) @map("is_active")
+  version       Int               @default(1)
+
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account    Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  costCenter CostCenter?     @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([hotelId, expenseNumber])
+  @@index([hotelId, status])
+  @@map("expenses")
+}
+
+model Income {
+  id          String     @id @default(uuid()) @db.Uuid
+  hotelId     String     @map("hotel_id") @db.Uuid
+  accountId   String?    @map("account_id") @db.Uuid
+  type        IncomeType
+  incomeNumber String    @map("income_number") @db.VarChar(30)
+  amount      Decimal    @db.Decimal(14, 2)
+  description String?    @db.Text
+  incomeDate  DateTime   @default(now()) @map("income_date") @db.Date
+  reference   String?    @db.VarChar(100)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?  @map("deleted_at") @db.Timestamptz
+  createdBy   String?    @map("created_by") @db.Uuid
+  updatedBy   String?    @map("updated_by") @db.Uuid
+  deletedBy   String?    @map("deleted_by") @db.Uuid
+  isActive    Boolean    @default(true) @map("is_active")
+  version     Int        @default(1)
+
+  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@unique([hotelId, incomeNumber])
+  @@index([hotelId, type])
+  @@map("incomes")
+}
+
+model JournalEntry {
+  id               String             @id @default(uuid()) @db.Uuid
+  hotelId          String             @map("hotel_id") @db.Uuid
+  entryNumber      String             @map("entry_number") @db.VarChar(30)
+  status           JournalEntryStatus @default(DRAFT)
+  approvalStatus   FinApprovalStatus  @default(DRAFT) @map("approval_status")
+  voucherType      FinVoucherType     @default(JOURNAL) @map("voucher_type")
+  entryDate        DateTime           @default(now()) @map("entry_date") @db.Date
+  description      String?            @db.Text
+  reference        String?            @db.VarChar(100)
+  sourceModule     String?            @map("source_module") @db.VarChar(50)
+  sourceId         String?            @map("source_id") @db.Uuid
+  costCenterId     String?            @map("cost_center_id") @db.Uuid
+  financialYearId  String?            @map("financial_year_id") @db.Uuid
+  isAutoPosted     Boolean            @default(false) @map("is_auto_posted")
+  isRecurring      Boolean            @default(false) @map("is_recurring")
+  postedAt         DateTime?          @map("posted_at") @db.Timestamptz
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy        String?            @map("created_by") @db.Uuid
+  updatedBy        String?            @map("updated_by") @db.Uuid
+  deletedBy        String?            @map("deleted_by") @db.Uuid
+  isActive         Boolean            @default(true) @map("is_active")
+  version          Int                @default(1)
+
+  costCenter       CostCenter?          @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  financialYear    FinancialYear?       @relation(fields: [financialYearId], references: [id], onDelete: SetNull)
+  lines            JournalLine[]
+  bankTransactions FinBankTransaction[]
+  cashTransactions FinCashTransaction[]
+
+  @@unique([hotelId, entryNumber])
+  @@index([hotelId, status])
+  @@index([hotelId, entryDate])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  entryId   String   @map("entry_id") @db.Uuid
+  accountId String   @map("account_id") @db.Uuid
+  debit     Decimal  @default(0) @db.Decimal(14, 2)
+  credit    Decimal  @default(0) @db.Decimal(14, 2)
+  description String? @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([hotelId, entryId])
+  @@index([hotelId, accountId])
+  @@map("journal_lines")
+}
+
+model SalaryComponent {
+  id        String              @id @default(uuid()) @db.Uuid
+  hotelId   String              @map("hotel_id") @db.Uuid
+  name      String              @db.VarChar(100)
+  code      String              @db.VarChar(20)
+  type      SalaryComponentType
+  isFixed   Boolean             @default(true) @map("is_fixed")
+  defaultValue Decimal          @default(0) @map("default_value") @db.Decimal(12, 2)
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?           @map("deleted_at") @db.Timestamptz
+  createdBy String?             @map("created_by") @db.Uuid
+  updatedBy String?             @map("updated_by") @db.Uuid
+  deletedBy String?             @map("deleted_by") @db.Uuid
+  isActive  Boolean             @default(true) @map("is_active")
+  version   Int                 @default(1)
+
+  @@unique([hotelId, code])
+  @@map("salary_components")
+}
+
+model PayrollRun {
+  id          String        @id @default(uuid()) @db.Uuid
+  hotelId     String        @map("hotel_id") @db.Uuid
+  runNumber   String        @map("run_number") @db.VarChar(30)
+  status      PayrollStatus @default(DRAFT)
+  periodStart DateTime      @map("period_start") @db.Date
+  periodEnd   DateTime      @map("period_end") @db.Date
+  totalGross  Decimal       @default(0) @map("total_gross") @db.Decimal(14, 2)
+  totalNet    Decimal       @default(0) @map("total_net") @db.Decimal(14, 2)
+  paidAt      DateTime?     @map("paid_at") @db.Timestamptz
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz
+  createdBy   String?       @map("created_by") @db.Uuid
+  updatedBy   String?       @map("updated_by") @db.Uuid
+  deletedBy   String?       @map("deleted_by") @db.Uuid
+  isActive    Boolean       @default(true) @map("is_active")
+  version     Int           @default(1)
+
+  lines PayrollLine[]
+
+  @@unique([hotelId, runNumber])
+  @@index([hotelId, status])
+  @@map("payroll_runs")
+}
+
+model PayrollLine {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  runId     String   @map("run_id") @db.Uuid
+  staffId   String   @map("staff_id") @db.Uuid
+  grossPay  Decimal  @default(0) @map("gross_pay") @db.Decimal(14, 2)
+  deductions Decimal @default(0) @db.Decimal(14, 2)
+  netPay    Decimal  @default(0) @map("net_pay") @db.Decimal(14, 2)
+  breakdown Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  run   PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  staff Staff      @relation(fields: [staffId], references: [id], onDelete: Restrict)
+
+  @@unique([hotelId, runId, staffId])
+  @@map("payroll_lines")
+}
+
+model AttendanceRecord {
+  id        String           @id @default(uuid()) @db.Uuid
+  hotelId   String           @map("hotel_id") @db.Uuid
+  staffId   String           @map("staff_id") @db.Uuid
+  date      DateTime         @db.Date
+  status    AttendanceStatus @default(PRESENT)
+  checkIn   DateTime?        @map("check_in") @db.Timestamptz
+  checkOut  DateTime?        @map("check_out") @db.Timestamptz
+  hoursWorked Decimal?       @map("hours_worked") @db.Decimal(5, 2)
+  notes     String?          @db.Text
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?        @map("deleted_at") @db.Timestamptz
+  createdBy String?          @map("created_by") @db.Uuid
+  updatedBy String?          @map("updated_by") @db.Uuid
+  deletedBy String?          @map("deleted_by") @db.Uuid
+  isActive  Boolean          @default(true) @map("is_active")
+  version   Int              @default(1)
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, staffId, date])
+  @@index([hotelId, date])
+  @@map("attendance_records")
+}
+
+model LeaveRequest {
+  id        String      @id @default(uuid()) @db.Uuid
+  hotelId   String      @map("hotel_id") @db.Uuid
+  staffId   String      @map("staff_id") @db.Uuid
+  leaveType String      @map("leave_type") @db.VarChar(50)
+  status    LeaveStatus @default(PENDING)
+  startDate DateTime    @map("start_date") @db.Date
+  endDate   DateTime    @map("end_date") @db.Date
+  reason    String?     @db.Text
+  approvedBy String?    @map("approved_by") @db.Uuid
+  approvedAt DateTime?  @map("approved_at") @db.Timestamptz
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?   @map("deleted_at") @db.Timestamptz
+  createdBy String?     @map("created_by") @db.Uuid
+  updatedBy String?     @map("updated_by") @db.Uuid
+  deletedBy String?     @map("deleted_by") @db.Uuid
+  isActive  Boolean     @default(true) @map("is_active")
+  version   Int         @default(1)
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, staffId])
+  @@index([hotelId, status])
+  @@map("leave_requests")
+}
+
+model Shift {
+  id        String    @id @default(uuid()) @db.Uuid
+  hotelId   String    @map("hotel_id") @db.Uuid
+  name      String    @db.VarChar(100)
+  type      ShiftType
+  startTime String    @map("start_time") @db.VarChar(10)
+  endTime   String    @map("end_time") @db.VarChar(10)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedBy String?   @map("deleted_by") @db.Uuid
+  isActive  Boolean   @default(true) @map("is_active")
+  version   Int       @default(1)
+
+  staffShifts StaffShift[]
+
+  @@unique([hotelId, name])
+  @@map("shifts")
+}
+
+model StaffShift {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  staffId   String   @map("staff_id") @db.Uuid
+  shiftId   String   @map("shift_id") @db.Uuid
+  date      DateTime @db.Date
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+
+  @@unique([hotelId, staffId, shiftId, date])
+  @@index([hotelId, date])
+  @@map("staff_shifts")
+}

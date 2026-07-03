@@ -1,0 +1,734 @@
+// =============================================================================
+// TungaOS — Domain Enums
+// =============================================================================
+
+enum SubscriptionPlan {
+  TRIAL
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+  CUSTOM
+}
+
+enum HotelStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_SETUP
+  CHURNED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  GUARANTEED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+  ON_HOLD
+  WAITLISTED
+}
+
+enum BookingSource {
+  DIRECT_WEBSITE
+  WALK_IN
+  PHONE
+  EMAIL
+  OTA_BOOKING_COM
+  OTA_EXPEDIA
+  OTA_AGODA
+  OTA_MMT
+  CORPORATE_PORTAL
+  TRAVEL_AGENT
+  GDS
+  CHANNEL_MANAGER
+  OTHER
+}
+
+enum RoomStatus {
+  VACANT_CLEAN
+  VACANT_DIRTY
+  VACANT
+  OCCUPIED
+  RESERVED
+  DIRTY
+  CLEANING
+  INSPECTED
+  OUT_OF_ORDER
+  OUT_OF_SERVICE
+  UNDER_MAINTENANCE
+  BLOCKED
+}
+
+enum RoomCategory {
+  STANDARD
+  DELUXE
+  SUITE
+  VILLA
+  COTTAGE
+  PRESIDENTIAL
+}
+
+enum RoomBlockReason {
+  MAINTENANCE
+  VIP_RESERVATION
+  DEEP_CLEANING
+  GOVERNMENT_BOOKING
+  PRIVATE_EVENT
+  MANUAL
+}
+
+enum GroupBookingType {
+  WEDDING
+  CORPORATE
+  CONFERENCE
+  SPORTS_TEAM
+  TOUR_GROUP
+  SCHOOL_GROUP
+  OTHER
+}
+
+enum FolioChargeCategory {
+  ROOM
+  RESTAURANT
+  LAUNDRY
+  MINI_BAR
+  SPA
+  TRANSPORT
+  TAX
+  DISCOUNT
+  LOYALTY
+  OTHER
+}
+
+enum CheckInStep {
+  RESERVATION
+  GUEST_VERIFICATION
+  DOCUMENT_UPLOAD
+  DIGITAL_SIGNATURE
+  PAYMENT_VERIFICATION
+  ROOM_ASSIGNMENT
+  KEY_CARD_ISSUE
+  COMPLETE
+}
+
+enum NightAuditStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum KeyCardStatus {
+  ACTIVE
+  DEACTIVATED
+  LOST
+  REISSUED
+}
+
+enum GuestRequestType {
+  EXTRA_BED
+  BABY_CRIB
+  EXTRA_PILLOW
+  AIRPORT_PICKUP
+  AIRPORT_DROP
+  BIRTHDAY_DECORATION
+  ANNIVERSARY_DECORATION
+  WHEELCHAIR
+  LATE_ARRIVAL
+  EARLY_CHECKIN
+  LATE_CHECKOUT
+  OTHER
+}
+
+enum GuestRequestStatus {
+  PENDING
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum FrontDeskTaskType {
+  WAKE_UP_CALL
+  TAXI
+  AIRPORT_PICKUP
+  GUEST_REQUEST
+  LAUNDRY
+  HOUSEKEEPING
+  MAINTENANCE
+  OTHER
+}
+
+enum FrontDeskTaskStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum LostFoundStatus {
+  FOUND
+  CLAIMED
+  DISPOSED
+  TRANSFERRED
+}
+
+enum GuestCommunicationChannel {
+  WHATSAPP
+  EMAIL
+  SMS
+  IN_APP
+}
+
+enum GuestCommunicationType {
+  BOOKING_CONFIRMATION
+  WELCOME
+  ROOM_READY
+  CHECKOUT_REMINDER
+  INVOICE
+  FEEDBACK_REQUEST
+  CUSTOM
+}
+
+enum FrontDeskLogAction {
+  CHECK_IN
+  CHECK_OUT
+  ROOM_ASSIGN
+  ROOM_TRANSFER
+  PAYMENT
+  KEY_ISSUE
+  COMPLAINT
+  WALK_IN
+  COMMUNICATION
+  OTHER
+}
+
+enum HousekeepingStatus {
+  PENDING
+  ASSIGNED
+  ACCEPTED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  INSPECTED
+  APPROVED
+  REJECTED
+  REOPENED
+  FAILED
+  CANCELLED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  TERMINATED
+  PROBATION
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+  VOIDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  UPI
+  BANK_TRANSFER
+  WALLET
+  RAZORPAY
+  STRIPE
+  CHEQUE
+  CORPORATE_CREDIT
+  LOYALTY_POINTS
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+  CANCELLED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum TaxType {
+  GST
+  VAT
+  SERVICE_TAX
+  CITY_TAX
+  TOURISM_TAX
+  CGST
+  SGST
+  IGST
+  CESS
+  OTHER
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+  EMERGENCY
+}
+
+enum MaintenanceStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  ON_HOLD
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  WITHDRAWN
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+  IN_APP
+  SYSTEM
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  BOUNCED
+}
+
+enum ComplaintStatus {
+  OPEN
+  ACKNOWLEDGED
+  IN_PROGRESS
+  ESCALATED
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_NIGHT
+  FREE_SERVICE
+  BUNDLE
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  COMPLIMENTARY
+  CORPORATE_RATE
+  PROMOTIONAL
+}
+
+enum LoyaltyType {
+  EARN
+  REDEEM
+  EXPIRE
+  ADJUSTMENT
+  TRANSFER
+  BONUS
+}
+
+enum MembershipTier {
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+  CORPORATE
+}
+
+enum ShiftType {
+  MORNING
+  AFTERNOON
+  EVENING
+  NIGHT
+  SPLIT
+  FLEXIBLE
+  ON_CALL
+}
+
+enum UserRoleType {
+  SUPER_ADMIN
+  HOTEL_OWNER
+  GENERAL_MANAGER
+  RECEPTIONIST
+  RESERVATION_TEAM
+  HOUSEKEEPING
+  RESTAURANT_MANAGER
+  KITCHEN_STAFF
+  STORE_MANAGER
+  INVENTORY_MANAGER
+  FINANCE
+  HR
+  MARKETING
+  CORPORATE_CLIENT
+  GUEST
+  VENDOR
+}
+
+enum BillStatus {
+  OPEN
+  CLOSED
+  VOID
+  MERGED
+}
+
+enum KitchenOrderStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  SUBMITTED
+  APPROVED
+  SENT
+  PARTIALLY_RECEIVED
+  FULLY_RECEIVED
+  RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+enum StockMovementType {
+  RECEIPT
+  ISSUE
+  TRANSFER
+  ADJUSTMENT
+  RETURN
+  WASTE
+  CONSUMPTION
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+  REVERSED
+}
+
+enum PayrollStatus {
+  DRAFT
+  CALCULATED
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LATE
+  ON_LEAVE
+  HOLIDAY
+  WEEK_OFF
+}
+
+enum EventStatus {
+  INQUIRY
+  TENTATIVE
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  RESERVED
+  ON_TRIP
+  IN_USE
+  MAINTENANCE
+  CLEANING
+  BREAKDOWN
+  OUT_OF_SERVICE
+  RETIRED
+}
+
+enum TripStatus {
+  REQUESTED
+  APPROVED
+  VEHICLE_ASSIGNED
+  DRIVER_ASSIGNED
+  DRIVER_EN_ROUTE
+  GUEST_PICKED
+  TRIP_STARTED
+  TRIP_COMPLETED
+  CANCELLED
+}
+
+enum TripPaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  BILLED_TO_ROOM
+  CORPORATE_CREDIT
+  REFUNDED
+}
+
+enum ParkingStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+}
+
+enum FileCategory {
+  GUEST_PHOTO
+  GUEST_ID
+  EMPLOYEE_DOCUMENT
+  INVOICE
+  RECEIPT
+  ROOM_IMAGE
+  HOTEL_LOGO
+  MENU_IMAGE
+  CONTRACT
+  ATTACHMENT
+  OTHER
+}
+
+enum AttachmentEntityType {
+  GUEST
+  STAFF
+  RESERVATION
+  ROOM
+  BILL
+  INVOICE
+  PURCHASE_ORDER
+  MAINTENANCE
+  COMPLAINT
+  EVENT
+  CORPORATE_CONTRACT
+  OTHER
+}
+
+enum OtaIntegrationStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  SYNCING
+}
+
+enum AiPredictionType {
+  OCCUPANCY
+  REVENUE
+  DEMAND
+  CHURN
+  STAFFING
+  INVENTORY
+  PRICING
+}
+
+enum ReportStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SOFT_DELETE
+  RESTORE
+  LOGIN
+  LOGOUT
+  EXPORT
+  IMPORT
+  APPROVE
+  REJECT
+}
+
+enum SettingScope {
+  PLATFORM
+  HOTEL
+  MODULE
+  USER
+}
+
+enum FeatureFlagScope {
+  PLATFORM
+  HOTEL
+  PLAN
+}
+
+enum IncomeType {
+  ROOM_REVENUE
+  FNB_REVENUE
+  EVENT_REVENUE
+  OTHER_REVENUE
+  SERVICE_CHARGE
+  MISCELLANEOUS
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum TravelRequestStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AirportPickupStatus {
+  SCHEDULED
+  DRIVER_ASSIGNED
+  EN_ROUTE
+  ARRIVED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum CrmLeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum MarketingCampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum OfferStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum ChannelSyncStatus {
+  SYNCED
+  PENDING
+  FAILED
+  DISABLED
+}
+
+enum LaundryStatus {
+  COLLECTED
+  IN_PROCESS
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum AssetStatus {
+  ACTIVE
+  IN_MAINTENANCE
+  DISPOSED
+  LOST
+}
+
+enum FeedbackType {
+  GENERAL
+  STAY
+  DINING
+  SERVICE
+  FACILITY
+  STAFF
+}
+
+enum ReviewSource {
+  DIRECT
+  GOOGLE
+  TRIPADVISOR
+  BOOKING_COM
+  INTERNAL
+  OTHER
+}
+
+enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SalaryComponentType {
+  EARNING
+  DEDUCTION
+  EMPLOYER_CONTRIBUTION
+}
+
+enum LoginStatus {
+  SUCCESS
+  FAILED
+  LOCKED
+  MFA_REQUIRED
+}
+
+enum ApiLogDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum ErrorSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}

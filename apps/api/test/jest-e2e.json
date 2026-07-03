@@ -1,0 +1,17 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".*\\.spec\\.ts$",
+  "transform": {
+    "@nestjs/testing": "ts-jest",
+    "ts-jest": {
+      "tsconfig": "tsconfig.json"
+    }
+  },
+  "collectCoverageFrom": ["src/**/*.ts", "!src/main.ts"],
+  "coverageDirectory": "./coverage",
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/src/$1"
+  }
+}

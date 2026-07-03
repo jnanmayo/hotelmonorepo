@@ -1,0 +1,19 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'packages/shared/**'
+      - 'docker/**'
+
+jobs:
+  deploy:
+    name: Build & Deploy API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -f docker/Dockerfile.api -t tungaos-api:${{ github.sha }} .
+      # Push to registry and deploy to Railway/EC2 — configured per environment

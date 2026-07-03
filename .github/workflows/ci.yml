@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tungaos/shared build
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+  test-api:
+    name: API Tests
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tungaos
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: tungaos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tungaos/shared build
+      - run: pnpm --filter @tungaos/api test
+        env:
+          DATABASE_URL: postgresql://tungaos:test@localhost:5432/tungaos_test
+          JWT_ACCESS_SECRET: test-access-secret-minimum-32-characters-long
+          JWT_REFRESH_SECRET: test-refresh-secret-minimum-32-characters-long
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tungaos/shared build
+      - run: pnpm build

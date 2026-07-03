@@ -1,0 +1,362 @@
+// =============================================================================
+// Modules 34-42: Inventory, Purchase, Vendors, Stock
+// =============================================================================
+
+model InventoryCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  code        String   @db.VarChar(20)
+  parentId    String?  @map("parent_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  hotel    Hotel              @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  parent   InventoryCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children InventoryCategory[] @relation("CategoryHierarchy")
+  items    InventoryItem[]
+  subCategoryItems InventoryItem[] @relation("SubCategoryItems")
+
+  @@unique([hotelId, code])
+  @@index([hotelId, parentId])
+  @@map("inventory_categories")
+}
+
+model UnitOfMeasure {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(50)
+  symbol    String   @db.VarChar(10)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  inventoryItems InventoryItem[]
+  purchaseUnitItems    InventoryItem[] @relation("PurchaseUnitItems")
+  consumptionUnitItems InventoryItem[] @relation("ConsumptionUnitItems")
+
+  @@unique([hotelId, symbol])
+  @@map("units_of_measure")
+}
+
+model InventoryItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  categoryId   String   @map("category_id") @db.Uuid
+  unitId       String   @map("unit_id") @db.Uuid
+  name         String   @db.VarChar(255)
+  sku          String   @db.VarChar(50)
+  itemCode     String?  @map("item_code") @db.VarChar(50)
+  barcode      String?  @db.VarChar(100)
+  qrCode       String?  @map("qr_code") @db.VarChar(500)
+  description  String?  @db.Text
+  subCategoryId String? @map("sub_category_id") @db.Uuid
+  brand        String?  @db.VarChar(100)
+  defaultStoreId String? @map("default_store_id") @db.Uuid
+  hsnCode      String?  @map("hsn_code") @db.VarChar(20)
+  gstRate      Decimal  @default(0) @map("gst_rate") @db.Decimal(5, 2)
+  purchaseUnitId String? @map("purchase_unit_id") @db.Uuid
+  consumptionUnitId String? @map("consumption_unit_id") @db.Uuid
+  currentStock Decimal  @default(0) @map("current_stock") @db.Decimal(14, 4)
+  reorderLevel Decimal  @default(0) @map("reorder_level") @db.Decimal(14, 4)
+  minStock     Decimal  @default(0) @map("min_stock") @db.Decimal(14, 4)
+  maxStock     Decimal  @default(0) @map("max_stock") @db.Decimal(14, 4)
+  costPrice    Decimal  @default(0) @map("cost_price") @db.Decimal(12, 4)
+  sellingPrice Decimal  @default(0) @map("selling_price") @db.Decimal(12, 4)
+  expiryRequired Boolean @default(false) @map("expiry_required")
+  batchTracking Boolean @default(false) @map("batch_tracking")
+  imageUrl     String?  @map("image_url") @db.VarChar(1000)
+  itemStatus   InventoryItemStatus @default(ACTIVE) @map("item_status")
+  costMethod   CostMethod @default(WEIGHTED) @map("cost_method")
+  location     String?  @db.VarChar(100)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy    String?  @map("created_by") @db.Uuid
+  updatedBy    String?  @map("updated_by") @db.Uuid
+  deletedBy    String?  @map("deleted_by") @db.Uuid
+  isActive     Boolean  @default(true) @map("is_active")
+  version      Int      @default(1)
+
+  category         InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  subCategory      InventoryCategory? @relation("SubCategoryItems", fields: [subCategoryId], references: [id], onDelete: SetNull)
+  unit             UnitOfMeasure     @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  purchaseUnit     UnitOfMeasure?    @relation("PurchaseUnitItems", fields: [purchaseUnitId], references: [id], onDelete: SetNull)
+  consumptionUnit  UnitOfMeasure?    @relation("ConsumptionUnitItems", fields: [consumptionUnitId], references: [id], onDelete: SetNull)
+  defaultStore     InventoryStore?   @relation("DefaultStoreItems", fields: [defaultStoreId], references: [id], onDelete: SetNull)
+  purchaseItems    PurchaseOrderItem[]
+  grnItems         GrnItem[]
+  stockMovements   StockMovement[]
+  stockBalances    StockBalance[]
+  batches          StockBatch[]
+  transferItems    StockTransferItem[]
+  issueItems       StockIssueItem[]
+  consumptions     StockConsumption[]
+  adjustments      StockAdjustment[]
+  auditItems       StockAuditItem[]
+  purchaseRequestItems InventoryPurchaseRequestItem[]
+  procPurchaseRequestItems ProcPurchaseRequestItem[]
+  rfqItems         RfqItem[]
+  purchaseReturnItems PurchaseReturnItem[]
+  reorderRules     ReorderRule[]
+  workOrderParts   WorkOrderPart[]
+
+  @@unique([hotelId, sku])
+  @@index([hotelId, categoryId])
+  @@index([hotelId, barcode])
+  @@index([hotelId, itemStatus])
+  @@map("inventory_items")
+}
+
+model Supplier {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(255)
+  code      String   @db.VarChar(50)
+  email     String?  @db.VarChar(255)
+  phone     String?  @db.VarChar(30)
+  address   String?  @db.Text
+  gstNumber String?  @map("gst_number") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  hotel          Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  purchaseOrders PurchaseOrder[]
+  grns           GoodsReceiptNote[]
+
+  @@unique([hotelId, code])
+  @@map("suppliers")
+}
+
+model Vendor {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(255)
+  code      String   @db.VarChar(50)
+  companyName String? @map("company_name") @db.VarChar(255)
+  categoryId String? @map("category_id") @db.Uuid
+  category  String?  @db.VarChar(100)
+  email     String?  @db.VarChar(255)
+  phone     String?  @db.VarChar(30)
+  whatsapp  String?  @db.VarChar(30)
+  address   String?  @db.Text
+  gstNumber String?  @map("gst_number") @db.VarChar(50)
+  panNumber String?  @map("pan_number") @db.VarChar(20)
+  msmeNumber String? @map("msme_number") @db.VarChar(50)
+  productsSupplied String? @map("products_supplied") @db.Text
+  bankDetails Json?  @map("bank_details")
+  paymentTerms PaymentTerms @default(NET_30) @map("payment_terms")
+  creditLimit Decimal @default(0) @map("credit_limit") @db.Decimal(14, 2)
+  leadTimeDays Int    @default(7) @map("lead_time_days")
+  taxInfo   Json?    @map("tax_info")
+  attachments Json?
+  rating    Decimal  @default(0) @db.Decimal(3, 2)
+  isBlacklisted Boolean @default(false) @map("is_blacklisted")
+  vendorStatus VendorStatus @default(ACTIVE) @map("vendor_status")
+  portalUserId String? @map("portal_user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  vendorCategory VendorCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  contacts VendorContact[]
+  purchaseOrders PurchaseOrder[]
+  rfqVendors RfqVendor[]
+  quotations VendorQuotation[]
+  contracts VendorContract[]
+  ratings VendorRating[]
+  grns GoodsReceiptNote[]
+  returns PurchaseReturn[]
+  invoices VendorInvoice[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId, vendorStatus])
+  @@map("vendors")
+}
+
+model PurchaseOrder {
+  id          String              @id @default(uuid()) @db.Uuid
+  hotelId     String              @map("hotel_id") @db.Uuid
+  supplierId  String              @map("supplier_id") @db.Uuid
+  vendorId    String?             @map("vendor_id") @db.Uuid
+  poNumber    String              @map("po_number") @db.VarChar(30)
+  status      PurchaseOrderStatus @default(DRAFT)
+  orderDate   DateTime            @default(now()) @map("order_date") @db.Date
+  expectedDate DateTime?          @map("expected_date") @db.Date
+  deliveryAddress String?         @map("delivery_address") @db.Text
+  paymentTerms PaymentTerms?      @map("payment_terms")
+  discountAmount Decimal         @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  gstAmount   Decimal             @default(0) @map("gst_amount") @db.Decimal(14, 2)
+  totalAmount Decimal             @default(0) @map("total_amount") @db.Decimal(14, 2)
+  approvedById String?            @map("approved_by_id") @db.Uuid
+  approvedAt  DateTime?           @map("approved_at") @db.Timestamptz
+  sentAt      DateTime?           @map("sent_at") @db.Timestamptz
+  rfqId       String?             @map("rfq_id") @db.Uuid
+  quotationId String?             @map("quotation_id") @db.Uuid
+  purchaseRequestId String?       @map("purchase_request_id") @db.Uuid
+  notes       String?             @db.Text
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?           @map("deleted_at") @db.Timestamptz
+  createdBy   String?             @map("created_by") @db.Uuid
+  updatedBy   String?             @map("updated_by") @db.Uuid
+  deletedBy   String?             @map("deleted_by") @db.Uuid
+  isActive    Boolean             @default(true) @map("is_active")
+  version     Int                 @default(1)
+
+  supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  vendor   Vendor?             @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  items    PurchaseOrderItem[]
+  grns     GoodsReceiptNote[]
+  returns  PurchaseReturn[]
+  invoices VendorInvoice[]
+
+  @@unique([hotelId, poNumber])
+  @@index([hotelId, status])
+  @@index([hotelId, vendorId])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  orderId     String   @map("order_id") @db.Uuid
+  itemId      String   @map("item_id") @db.Uuid
+  quantity    Decimal  @db.Decimal(14, 4)
+  unitPrice   Decimal  @default(0) @map("unit_price") @db.Decimal(12, 4)
+  discount    Decimal  @default(0) @db.Decimal(12, 4)
+  gstRate     Decimal  @default(0) @map("gst_rate") @db.Decimal(5, 2)
+  totalAmount Decimal  @default(0) @map("total_amount") @db.Decimal(14, 2)
+  receivedQty Decimal  @default(0) @map("received_qty") @db.Decimal(14, 4)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  order PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item  InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([hotelId, orderId])
+  @@map("purchase_order_items")
+}
+
+model GoodsReceiptNote {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  supplierId  String   @map("supplier_id") @db.Uuid
+  vendorId    String?  @map("vendor_id") @db.Uuid
+  storeId     String?  @map("store_id") @db.Uuid
+  orderId     String?  @map("order_id") @db.Uuid
+  grnNumber   String   @map("grn_number") @db.VarChar(30)
+  status      GrnStatus @default(DRAFT)
+  receivedDate DateTime @default(now()) @map("received_date") @db.Date
+  receiverId  String?  @map("receiver_id") @db.Uuid
+  inspectionStatus InspectionStatus @default(PENDING) @map("inspection_status")
+  inspectionNotes String? @map("inspection_notes") @db.Text
+  photos      Json?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  vendor   Vendor?        @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  store    InventoryStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  order    PurchaseOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  items    GrnItem[]
+
+  @@unique([hotelId, grnNumber])
+  @@index([hotelId, status])
+  @@map("goods_receipt_notes")
+}
+
+model GrnItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  grnId     String   @map("grn_id") @db.Uuid
+  itemId    String   @map("item_id") @db.Uuid
+  quantity  Decimal  @db.Decimal(14, 4)
+  acceptedQty Decimal @default(0) @map("accepted_qty") @db.Decimal(14, 4)
+  rejectedQty Decimal @default(0) @map("rejected_qty") @db.Decimal(14, 4)
+  unitPrice Decimal  @default(0) @map("unit_price") @db.Decimal(12, 4)
+  batchNumber String? @map("batch_number") @db.VarChar(50)
+  expiryDate DateTime? @map("expiry_date") @db.Date
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  grn  GoodsReceiptNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  item InventoryItem    @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([hotelId, grnId])
+  @@map("grn_items")
+}
+
+model StockMovement {
+  id          String            @id @default(uuid()) @db.Uuid
+  hotelId     String            @map("hotel_id") @db.Uuid
+  itemId      String            @map("item_id") @db.Uuid
+  storeId     String?           @map("store_id") @db.Uuid
+  type        StockMovementType
+  quantity    Decimal           @db.Decimal(14, 4)
+  balanceAfter Decimal          @map("balance_after") @db.Decimal(14, 4)
+  unitCost    Decimal           @default(0) @map("unit_cost") @db.Decimal(12, 4)
+  batchNumber String?           @map("batch_number") @db.VarChar(50)
+  department  InventoryDepartment?
+  reference   String?           @db.VarChar(100)
+  referenceId String?           @map("reference_id") @db.Uuid
+  notes       String?           @db.Text
+  movementDate DateTime          @default(now()) @map("movement_date") @db.Timestamptz
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?         @map("deleted_at") @db.Timestamptz
+  createdBy   String?           @map("created_by") @db.Uuid
+  updatedBy   String?           @map("updated_by") @db.Uuid
+  deletedBy   String?           @map("deleted_by") @db.Uuid
+  isActive    Boolean           @default(true) @map("is_active")
+  version     Int               @default(1)
+
+  item InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([hotelId, itemId, movementDate(sort: Desc)])
+  @@index([hotelId, type])
+  @@index([hotelId, storeId])
+  @@map("stock_movements")
+}

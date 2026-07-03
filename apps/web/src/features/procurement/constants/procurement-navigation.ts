@@ -1,0 +1,75 @@
+const BASE = '/procurement';
+
+export const PROC_ROUTES = {
+  home: '/app/procurement',
+  vendors: '/app/procurement/vendors',
+  purchaseRequests: '/app/procurement/purchase-requests',
+  rfqs: '/app/procurement/rfqs',
+  quotations: '/app/procurement/quotations',
+  comparison: '/app/procurement/comparison',
+  purchaseOrders: '/app/procurement/purchase-orders',
+  grns: '/app/procurement/grns',
+  inspection: '/app/procurement/inspection',
+  returns: '/app/procurement/returns',
+  contracts: '/app/procurement/contracts',
+  budgets: '/app/procurement/budgets',
+  invoices: '/app/procurement/invoices',
+  approvals: '/app/procurement/approvals',
+  reports: '/app/procurement/reports',
+  analytics: '/app/procurement/analytics',
+  mobile: '/app/procurement/mobile',
+  vendorPortal: '/vendor',
+} as const;
+
+export const PROC_API = {
+  dashboard: `${BASE}/dashboard`,
+  seed: `${BASE}/seed`,
+  vendors: `${BASE}/vendors`,
+  vendor: (id: string) => `${BASE}/vendors/${id}`,
+  vendorCategories: `${BASE}/vendor-categories`,
+  purchaseRequests: `${BASE}/purchase-requests`,
+  prApprove: (id: string, level: string) => `${BASE}/purchase-requests/${id}/approve?level=${level}`,
+  rfqs: `${BASE}/rfqs`,
+  quotations: `${BASE}/quotations`,
+  quotationCompare: (rfqId: string) => `${BASE}/quotations/compare/${rfqId}`,
+  quotationSelect: (id: string) => `${BASE}/quotations/${id}/select`,
+  purchaseOrders: `${BASE}/purchase-orders`,
+  poApprove: (id: string) => `${BASE}/purchase-orders/${id}/approve`,
+  poSend: (id: string) => `${BASE}/purchase-orders/${id}/send`,
+  grns: `${BASE}/grns`,
+  grnInspect: (id: string) => `${BASE}/grns/${id}/inspect`,
+  grnPost: (id: string) => `${BASE}/grns/${id}/post`,
+  returns: `${BASE}/returns`,
+  contracts: `${BASE}/contracts`,
+  budgets: `${BASE}/budgets`,
+  invoices: `${BASE}/invoices`,
+  analytics: `${BASE}/analytics`,
+  report: (type: string) => `${BASE}/reports/${type}`,
+  vendorPortalDashboard: '/vendor-portal/dashboard',
+  vendorPortalPos: '/vendor-portal/purchase-orders',
+  vendorPortalRfqs: '/vendor-portal/rfqs',
+} as const;
+
+export const PROC_NAV = [
+  { label: 'Dashboard', href: PROC_ROUTES.home },
+  { label: 'Vendors', href: PROC_ROUTES.vendors },
+  { label: 'Purchase Requests', href: PROC_ROUTES.purchaseRequests },
+  { label: 'RFQs', href: PROC_ROUTES.rfqs },
+  { label: 'Quotations', href: PROC_ROUTES.quotations },
+  { label: 'Comparison', href: PROC_ROUTES.comparison },
+  { label: 'Purchase Orders', href: PROC_ROUTES.purchaseOrders },
+  { label: 'GRN', href: PROC_ROUTES.grns },
+  { label: 'Inspection', href: PROC_ROUTES.inspection },
+  { label: 'Returns', href: PROC_ROUTES.returns },
+  { label: 'Contracts', href: PROC_ROUTES.contracts },
+  { label: 'Budgets', href: PROC_ROUTES.budgets },
+  { label: 'Invoices', href: PROC_ROUTES.invoices },
+  { label: 'Approvals', href: PROC_ROUTES.approvals },
+  { label: 'Reports', href: PROC_ROUTES.reports },
+  { label: 'Analytics', href: PROC_ROUTES.analytics },
+  { label: 'Mobile', href: PROC_ROUTES.mobile },
+] as const;
+
+export function isProcurementRoute(pathname: string): boolean {
+  return pathname === '/app/procurement' || pathname.startsWith('/app/procurement/');
+}

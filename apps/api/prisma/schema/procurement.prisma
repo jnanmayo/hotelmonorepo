@@ -1,0 +1,472 @@
+// =============================================================================
+// Enterprise Procurement & Vendor Management — TungaOS
+// =============================================================================
+
+enum PaymentTerms {
+  ADVANCE
+  NET_15
+  NET_30
+  NET_45
+  NET_60
+  CREDIT
+  PARTIAL
+}
+
+enum VendorStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
+  BLACKLISTED
+}
+
+enum GrnStatus {
+  DRAFT
+  RECEIVED
+  INSPECTING
+  ACCEPTED
+  PARTIALLY_ACCEPTED
+  REJECTED
+  POSTED
+}
+
+enum InspectionStatus {
+  PENDING
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+}
+
+enum ProcPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ProcPrStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_APPROVAL
+  DEPT_APPROVED
+  PM_APPROVED
+  APPROVED
+  REJECTED
+  CONVERTED_RFQ
+  CONVERTED_PO
+  CANCELLED
+}
+
+enum RfqStatus {
+  DRAFT
+  SENT
+  QUOTATIONS_RECEIVED
+  COMPARING
+  VENDOR_SELECTED
+  CLOSED
+  CANCELLED
+  EXPIRED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  SELECTED
+  REJECTED
+  EXPIRED
+}
+
+enum ReturnReason {
+  DAMAGED
+  EXPIRED
+  WRONG_QUANTITY
+  WRONG_PRODUCT
+  QUALITY_ISSUE
+}
+
+enum ReturnStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  DISPATCHED
+  RECEIVED_BY_VENDOR
+  CLOSED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRING
+  EXPIRED
+  RENEWED
+  TERMINATED
+}
+
+enum VendorInvoiceStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_MATCH
+  MATCHED
+  MISMATCH
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum ApprovalLevel {
+  EMPLOYEE
+  DEPT_HEAD
+  PURCHASE_MANAGER
+  FINANCE
+  GENERAL_MANAGER
+  OWNER
+}
+
+model VendorCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  code      String   @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  isActive  Boolean  @default(true) @map("is_active")
+
+  hotel   Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  vendors Vendor[]
+
+  @@unique([hotelId, code])
+  @@map("vendor_categories")
+}
+
+model VendorContact {
+  id        String   @id @default(uuid()) @db.Uuid
+  vendorId  String   @map("vendor_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  email     String?  @db.VarChar(255)
+  phone     String?  @db.VarChar(30)
+  whatsapp  String?  @db.VarChar(30)
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@map("vendor_contacts")
+}
+
+model ProcPurchaseRequest {
+  id            String       @id @default(uuid()) @db.Uuid
+  hotelId       String       @map("hotel_id") @db.Uuid
+  requestNumber String       @map("request_number") @db.VarChar(30)
+  department    InventoryDepartment
+  priority      ProcPriority @default(NORMAL)
+  status        ProcPrStatus @default(DRAFT)
+  requiredDate  DateTime?    @map("required_date") @db.Date
+  reason        String?      @db.Text
+  remarks       String?      @db.Text
+  attachments   Json?
+  requestedById String?      @map("requested_by_id") @db.Uuid
+  deptApprovedById String?   @map("dept_approved_by_id") @db.Uuid
+  pmApprovedById String?     @map("pm_approved_by_id") @db.Uuid
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  items ProcPurchaseRequestItem[]
+  rfqs  Rfq[]
+
+  @@unique([hotelId, requestNumber])
+  @@index([hotelId, status])
+  @@map("proc_purchase_requests")
+}
+
+model ProcPurchaseRequestItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  requestId String  @map("request_id") @db.Uuid
+  itemId    String? @map("item_id") @db.Uuid
+  itemName  String  @map("item_name") @db.VarChar(255)
+  quantity  Decimal @db.Decimal(14, 4)
+  unit      String? @db.VarChar(20)
+  notes     String? @db.Text
+
+  request ProcPurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  item    InventoryItem?      @relation(fields: [itemId], references: [id], onDelete: SetNull)
+
+  @@index([requestId])
+  @@map("proc_purchase_request_items")
+}
+
+model Rfq {
+  id            String    @id @default(uuid()) @db.Uuid
+  hotelId       String    @map("hotel_id") @db.Uuid
+  rfqNumber     String    @map("rfq_number") @db.VarChar(30)
+  purchaseRequestId String? @map("purchase_request_id") @db.Uuid
+  status        RfqStatus @default(DRAFT)
+  expiryDate    DateTime? @map("expiry_date") @db.Timestamptz
+  deadline      DateTime? @db.Timestamptz
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel           Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  purchaseRequest ProcPurchaseRequest? @relation(fields: [purchaseRequestId], references: [id], onDelete: SetNull)
+  items           RfqItem[]
+  vendors         RfqVendor[]
+  quotations      VendorQuotation[]
+
+  @@unique([hotelId, rfqNumber])
+  @@index([hotelId, status])
+  @@map("rfqs")
+}
+
+model RfqItem {
+  id       String  @id @default(uuid()) @db.Uuid
+  rfqId    String  @map("rfq_id") @db.Uuid
+  itemId   String? @map("item_id") @db.Uuid
+  itemName String  @map("item_name") @db.VarChar(255)
+  quantity Decimal @db.Decimal(14, 4)
+  unit     String? @db.VarChar(20)
+
+  rfq  Rfq            @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  item InventoryItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+
+  @@index([rfqId])
+  @@map("rfq_items")
+}
+
+model RfqVendor {
+  id       String   @id @default(uuid()) @db.Uuid
+  rfqId    String   @map("rfq_id") @db.Uuid
+  vendorId String   @map("vendor_id") @db.Uuid
+  sentAt   DateTime? @map("sent_at") @db.Timestamptz
+  emailSent Boolean @default(false) @map("email_sent")
+
+  rfq    Rfq    @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([rfqId, vendorId])
+  @@map("rfq_vendors")
+}
+
+model VendorQuotation {
+  id              String          @id @default(uuid()) @db.Uuid
+  hotelId         String          @map("hotel_id") @db.Uuid
+  rfqId           String          @map("rfq_id") @db.Uuid
+  vendorId        String          @map("vendor_id") @db.Uuid
+  quotationNumber String          @map("quotation_number") @db.VarChar(30)
+  status          QuotationStatus @default(DRAFT)
+  deliveryCharges Decimal         @default(0) @map("delivery_charges") @db.Decimal(14, 2)
+  leadTimeDays    Int             @default(7) @map("lead_time_days")
+  warranty        String?         @db.VarChar(255)
+  validityDate    DateTime?       @map("validity_date") @db.Date
+  totalAmount     Decimal         @default(0) @map("total_amount") @db.Decimal(14, 2)
+  isRecommended   Boolean         @default(false) @map("is_recommended")
+  attachments     Json?
+  remarks         String?         @db.Text
+  submittedAt     DateTime?       @map("submitted_at") @db.Timestamptz
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel  Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  rfq    Rfq   @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  items  QuotationItem[]
+
+  @@unique([hotelId, quotationNumber])
+  @@index([hotelId, rfqId])
+  @@map("vendor_quotations")
+}
+
+model QuotationItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  quotationId String  @map("quotation_id") @db.Uuid
+  itemName    String  @map("item_name") @db.VarChar(255)
+  quantity    Decimal @db.Decimal(14, 4)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(12, 4)
+  discount    Decimal @default(0) @db.Decimal(12, 4)
+  gstRate     Decimal @default(0) @map("gst_rate") @db.Decimal(5, 2)
+  totalAmount Decimal @default(0) @map("total_amount") @db.Decimal(14, 2)
+
+  quotation VendorQuotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@map("quotation_items")
+}
+
+model PurchaseReturn {
+  id           String       @id @default(uuid()) @db.Uuid
+  hotelId      String       @map("hotel_id") @db.Uuid
+  returnNumber String       @map("return_number") @db.VarChar(30)
+  vendorId     String       @map("vendor_id") @db.Uuid
+  orderId      String?      @map("order_id") @db.Uuid
+  grnId        String?      @map("grn_id") @db.Uuid
+  reason       ReturnReason
+  status       ReturnStatus @default(DRAFT)
+  notes        String?      @db.Text
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel  Hotel          @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  vendor Vendor         @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  order  PurchaseOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  items  PurchaseReturnItem[]
+
+  @@unique([hotelId, returnNumber])
+  @@index([hotelId, status])
+  @@map("purchase_returns")
+}
+
+model PurchaseReturnItem {
+  id       String  @id @default(uuid()) @db.Uuid
+  returnId String  @map("return_id") @db.Uuid
+  itemId   String  @map("item_id") @db.Uuid
+  quantity Decimal @db.Decimal(14, 4)
+  notes    String? @db.Text
+
+  purchaseReturn PurchaseReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  item           InventoryItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([returnId])
+  @@map("purchase_return_items")
+}
+
+model VendorContract {
+  id           String         @id @default(uuid()) @db.Uuid
+  hotelId      String         @map("hotel_id") @db.Uuid
+  vendorId     String         @map("vendor_id") @db.Uuid
+  contractNumber String       @map("contract_number") @db.VarChar(30)
+  title        String         @db.VarChar(255)
+  status       ContractStatus @default(DRAFT)
+  startDate    DateTime       @map("start_date") @db.Date
+  endDate      DateTime       @map("end_date") @db.Date
+  renewalDate  DateTime?      @map("renewal_date") @db.Date
+  pricing      Json?
+  terms        String?        @db.Text
+  attachments  Json?
+  autoRenew    Boolean        @default(false) @map("auto_renew")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel  Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, contractNumber])
+  @@index([hotelId, endDate])
+  @@map("vendor_contracts")
+}
+
+model VendorRating {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hotelId              String   @map("hotel_id") @db.Uuid
+  vendorId             String   @map("vendor_id") @db.Uuid
+  onTimeDeliveryScore  Decimal  @default(0) @map("on_time_delivery_score") @db.Decimal(3, 2)
+  qualityScore         Decimal  @default(0) @map("quality_score") @db.Decimal(3, 2)
+  priceScore           Decimal  @default(0) @map("price_score") @db.Decimal(3, 2)
+  responseTimeScore    Decimal  @default(0) @map("response_time_score") @db.Decimal(3, 2)
+  overallRating        Decimal  @default(0) @map("overall_rating") @db.Decimal(3, 2)
+  rejectedDeliveries   Int      @default(0) @map("rejected_deliveries")
+  avgLeadTimeDays      Int      @default(0) @map("avg_lead_time_days")
+  periodStart          DateTime @map("period_start") @db.Date
+  periodEnd            DateTime @map("period_end") @db.Date
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel  Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, vendorId])
+  @@map("vendor_ratings")
+}
+
+model ProcurementBudget {
+  id           String              @id @default(uuid()) @db.Uuid
+  hotelId      String              @map("hotel_id") @db.Uuid
+  department   InventoryDepartment
+  fiscalYear   Int                 @map("fiscal_year")
+  budgetAmount Decimal             @map("budget_amount") @db.Decimal(14, 2)
+  spentAmount  Decimal             @default(0) @map("spent_amount") @db.Decimal(14, 2)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, department, fiscalYear])
+  @@map("procurement_budgets")
+}
+
+model ProcurementApproval {
+  id         String        @id @default(uuid()) @db.Uuid
+  hotelId    String        @map("hotel_id") @db.Uuid
+  entityType String        @map("entity_type") @db.VarChar(50)
+  entityId   String        @map("entity_id") @db.Uuid
+  level      ApprovalLevel
+  approverId String?       @map("approver_id") @db.Uuid
+  status     String        @default("PENDING") @db.VarChar(20)
+  comments   String?       @db.Text
+  actedAt    DateTime?     @map("acted_at") @db.Timestamptz
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, entityType, entityId])
+  @@map("procurement_approvals")
+}
+
+model VendorInvoice {
+  id            String              @id @default(uuid()) @db.Uuid
+  hotelId       String              @map("hotel_id") @db.Uuid
+  vendorId      String              @map("vendor_id") @db.Uuid
+  orderId       String?             @map("order_id") @db.Uuid
+  invoiceNumber String              @map("invoice_number") @db.VarChar(50)
+  status        VendorInvoiceStatus @default(SUBMITTED)
+  invoiceDate   DateTime            @map("invoice_date") @db.Date
+  dueDate       DateTime?           @map("due_date") @db.Date
+  subtotal      Decimal             @default(0) @db.Decimal(14, 2)
+  gstAmount     Decimal             @default(0) @map("gst_amount") @db.Decimal(14, 2)
+  totalAmount   Decimal             @default(0) @map("total_amount") @db.Decimal(14, 2)
+  matchedAmount Decimal             @default(0) @map("matched_amount") @db.Decimal(14, 2)
+  attachments   Json?
+  notes         String?             @db.Text
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel  Hotel          @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  vendor Vendor         @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  order  PurchaseOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  items  VendorInvoiceItem[]
+
+  @@unique([hotelId, invoiceNumber])
+  @@index([hotelId, status])
+  @@map("vendor_invoices")
+}
+
+model VendorInvoiceItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  invoiceId   String  @map("invoice_id") @db.Uuid
+  description String  @db.VarChar(255)
+  quantity    Decimal @db.Decimal(14, 4)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(12, 4)
+  gstRate     Decimal @default(0) @map("gst_rate") @db.Decimal(5, 2)
+  totalAmount Decimal @default(0) @map("total_amount") @db.Decimal(14, 2)
+
+  invoice VendorInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("vendor_invoice_items")
+}
+
+model ProcurementLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  entity    String   @db.VarChar(50)
+  entityId  String   @map("entity_id") @db.Uuid
+  action    String   @db.VarChar(50)
+  details   Json?
+  userId    String?  @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, entity, createdAt(sort: Desc)])
+  @@map("procurement_logs")
+}

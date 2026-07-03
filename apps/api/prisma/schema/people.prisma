@@ -1,0 +1,164 @@
+// =============================================================================
+// Modules 6-8: Staff, Guests, Guest Documents
+// =============================================================================
+
+model Staff {
+  id             String         @id @default(uuid()) @db.Uuid
+  hotelId        String         @map("hotel_id") @db.Uuid
+  userId         String         @unique @map("user_id") @db.Uuid
+  employeeCode   String         @map("employee_code") @db.VarChar(50)
+  department     String?        @db.VarChar(100)
+  designation    String?        @db.VarChar(100)
+  joiningDate    DateTime?      @map("joining_date") @db.Date
+  terminationDate DateTime?     @map("termination_date") @db.Date
+  status         EmployeeStatus @default(ACTIVE)
+  emergencyContact String?      @map("emergency_contact") @db.VarChar(30)
+  emergencyName  String?        @map("emergency_name") @db.VarChar(100)
+  address        String?        @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz
+  createdBy      String?        @map("created_by") @db.Uuid
+  updatedBy      String?        @map("updated_by") @db.Uuid
+  deletedBy      String?        @map("deleted_by") @db.Uuid
+  isActive       Boolean        @default(true) @map("is_active")
+  version        Int            @default(1)
+
+  hotel              Hotel               @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents          StaffDocument[]
+  attendanceRecords  AttendanceRecord[]
+  leaveRequests      LeaveRequest[]
+  staffShifts        StaffShift[]
+  payrollLines       PayrollLine[]
+  housekeepingTasks  HousekeepingTask[]  @relation("AssignedHousekeeper")
+  maintenanceRequests MaintenanceRequest[] @relation("AssignedMaintainer")
+  assignedWorkOrders  WorkOrder[]          @relation("AssignedWorkOrder")
+  technicianProfile   TechnicianProfile?
+  managedStores      InventoryStore[]
+  profile            StaffProfile?
+  onboardingTasks    OnboardingTask[]
+  trainings          EmployeeTraining[]
+  performanceReviews PerformanceReview[]
+  expenseClaims      HrExpenseClaim[]
+  exitProcesses      ExitProcess[]
+
+  @@unique([hotelId, employeeCode])
+  @@index([hotelId, status])
+  @@index([hotelId, department])
+  @@map("staff")
+}
+
+model StaffDocument {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  staffId   String   @map("staff_id") @db.Uuid
+  fileId    String   @map("file_id") @db.Uuid
+  docType   String   @map("doc_type") @db.VarChar(50)
+  title     String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  staff Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  file  StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, staffId])
+  @@map("staff_documents")
+}
+
+model Guest {
+  id              String    @id @default(uuid()) @db.Uuid
+  hotelId         String    @map("hotel_id") @db.Uuid
+  userId          String?   @unique @map("user_id") @db.Uuid
+  guestCode       String    @map("guest_code") @db.VarChar(50)
+  firstName       String    @map("first_name") @db.VarChar(100)
+  lastName        String    @map("last_name") @db.VarChar(100)
+  email           String?   @db.VarChar(255)
+  phone           String?   @db.VarChar(30)
+  alternatePhone  String?   @map("alternate_phone") @db.VarChar(30)
+  gender          Gender?
+  dateOfBirth     DateTime? @map("date_of_birth") @db.Date
+  nationality     String?   @db.VarChar(100)
+  country         String?   @db.VarChar(100)
+  address         String?   @db.Text
+  city            String?   @db.VarChar(100)
+  state           String?   @db.VarChar(100)
+  postalCode      String?   @map("postal_code") @db.VarChar(20)
+  photoUrl        String?   @map("photo_url") @db.VarChar(1000)
+  companyName     String?   @map("company_name") @db.VarChar(255)
+  gstNumber       String?   @map("gst_number") @db.VarChar(50)
+  passportNumber  String?   @map("passport_number") @db.VarChar(50)
+  aadhaarHash     String?   @map("aadhaar_hash") @db.VarChar(128)
+  anniversary     DateTime? @db.Date
+  vipStatus       Boolean   @default(false) @map("vip_status")
+  isCorporate     Boolean   @default(false) @map("is_corporate")
+  isBlacklisted   Boolean   @default(false) @map("is_blacklisted")
+  blacklistReason String?   @map("blacklist_reason") @db.VarChar(500)
+  membershipTier  MembershipTier? @map("membership_tier")
+  foodPreferences Json?     @map("food_preferences")
+  preferences     Json?
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+  deletedBy       String?   @map("deleted_by") @db.Uuid
+  isActive        Boolean   @default(true) @map("is_active")
+  version         Int       @default(1)
+
+  hotel              Hotel               @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  documents          GuestDocument[]
+  reservations       Reservation[]
+  bills              Bill[]
+  invoices           Invoice[]
+  payments           Payment[]
+  loyaltyAccount     LoyaltyAccount?
+  feedbacks          Feedback[]
+  reviews            Review[]
+  complaints         Complaint[]
+  corporateEmployees CorporateEmployee[]
+  timelineEvents     GuestTimelineEvent[]
+  crmNotes           GuestCrmNote[]
+  referralsMade      Referral[]           @relation("ReferrerGuest")
+  giftCards          GiftCard[]
+  eventClients       EventClient[]
+
+  @@unique([hotelId, guestCode])
+  @@index([hotelId, email])
+  @@index([hotelId, phone])
+  @@index([hotelId, lastName, firstName])
+  @@map("guests")
+}
+
+model GuestDocument {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  guestId   String   @map("guest_id") @db.Uuid
+  fileId    String   @map("file_id") @db.Uuid
+  docType   String   @map("doc_type") @db.VarChar(50)
+  docNumber String?  @map("doc_number") @db.VarChar(100)
+  expiryDate DateTime? @map("expiry_date") @db.Date
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  guest Guest      @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  file  StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, guestId])
+  @@index([hotelId, docType])
+  @@map("guest_documents")
+}

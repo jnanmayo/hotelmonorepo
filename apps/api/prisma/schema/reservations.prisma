@@ -1,0 +1,106 @@
+// =============================================================================
+// Modules 9-10: Reservations
+// =============================================================================
+
+model Reservation {
+  id              String            @id @default(uuid()) @db.Uuid
+  hotelId         String            @map("hotel_id") @db.Uuid
+  guestId         String            @map("guest_id") @db.Uuid
+  roomId          String?           @map("room_id") @db.Uuid
+  roomTypeId      String            @map("room_type_id") @db.Uuid
+  reservationCode String            @map("reservation_code") @db.VarChar(30)
+  status          ReservationStatus @default(PENDING)
+  source          BookingSource     @default(DIRECT_WEBSITE)
+  checkInDate     DateTime          @map("check_in_date") @db.Date
+  checkOutDate    DateTime          @map("check_out_date") @db.Date
+  actualCheckIn   DateTime?         @map("actual_check_in") @db.Timestamptz
+  actualCheckOut  DateTime?         @map("actual_check_out") @db.Timestamptz
+  adults          Int               @default(1)
+  children        Int               @default(0)
+  infants         Int               @default(0)
+  roomRate        Decimal           @default(0) @map("room_rate") @db.Decimal(12, 2)
+  totalAmount     Decimal           @default(0) @map("total_amount") @db.Decimal(12, 2)
+  taxAmount       Decimal           @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  discountAmount  Decimal           @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  paidAmount      Decimal           @default(0) @map("paid_amount") @db.Decimal(12, 2)
+  balanceAmount   Decimal           @default(0) @map("balance_amount") @db.Decimal(12, 2)
+  currency        String            @default("INR") @db.VarChar(3)
+  specialRequests String?           @map("special_requests") @db.Text
+  internalNotes   String?           @map("internal_notes") @db.Text
+  otaReference    String?           @map("ota_reference") @db.VarChar(100)
+  corporateBookingId String?        @map("corporate_booking_id") @db.Uuid
+  groupBookingId     String?        @map("group_booking_id") @db.Uuid
+  travelAgentId      String?        @map("travel_agent_id") @db.Uuid
+  waitlistPriority   Int?           @map("waitlist_priority")
+  isGuaranteed       Boolean        @default(false) @map("is_guaranteed")
+  couponId        String?           @map("coupon_id") @db.Uuid
+  offerId         String?           @map("offer_id") @db.Uuid
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
+  createdBy       String?           @map("created_by") @db.Uuid
+  updatedBy       String?           @map("updated_by") @db.Uuid
+  deletedBy       String?           @map("deleted_by") @db.Uuid
+  isActive        Boolean           @default(true) @map("is_active")
+  version         Int               @default(1)
+
+  hotel            Hotel              @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  guest            Guest              @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  room             Room?              @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  roomType         RoomType           @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  corporateBooking CorporateBooking?  @relation(fields: [corporateBookingId], references: [id], onDelete: SetNull)
+  groupBooking     GroupBooking?      @relation(fields: [groupBookingId], references: [id], onDelete: SetNull)
+  travelAgent      TravelAgent?       @relation(fields: [travelAgentId], references: [id], onDelete: SetNull)
+  coupon           Coupon?            @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  offer            Offer?             @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  history          ReservationHistory[]
+  invoices         Invoice[]
+  bills            Bill[]
+  airportPickups   AirportPickup[]
+  trips            Trip[]
+  feedbacks        Feedback[]
+  reviews          Review[]
+  addonSelections  BookingAddonSelection[]
+  bookingEvents    BookingEvent[]
+  payments         Payment[]
+  channelWebhooks  ChannelWebhookEvent[]
+  commissionLogs   ChannelCommissionLog[]
+  roomTransfers    RoomTransfer[]
+  checkInRecord    CheckInRecord?
+  checkOutRecord   CheckOutRecord?
+  folioCharges     FolioCharge[]
+  eventRoomBlocks  EventRoomBlock[]
+
+  @@index([hotelId, groupBookingId])
+  @@index([hotelId, travelAgentId])
+  @@unique([hotelId, reservationCode])
+  @@index([hotelId, status])
+  @@index([hotelId, checkInDate, checkOutDate])
+  @@index([hotelId, guestId])
+  @@index([hotelId, roomId])
+  @@index([hotelId, source])
+  @@map("reservations")
+}
+
+model ReservationHistory {
+  id            String            @id @default(uuid()) @db.Uuid
+  hotelId       String            @map("hotel_id") @db.Uuid
+  reservationId String            @map("reservation_id") @db.Uuid
+  fromStatus    ReservationStatus? @map("from_status")
+  toStatus      ReservationStatus  @map("to_status")
+  changeReason  String?           @map("change_reason") @db.VarChar(500)
+  metadata      Json?
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?         @map("deleted_at") @db.Timestamptz
+  createdBy     String?           @map("created_by") @db.Uuid
+  updatedBy     String?           @map("updated_by") @db.Uuid
+  deletedBy     String?           @map("deleted_by") @db.Uuid
+  isActive      Boolean           @default(true) @map("is_active")
+  version       Int               @default(1)
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, reservationId, createdAt(sort: Desc)])
+  @@map("reservation_history")
+}

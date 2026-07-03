@@ -1,0 +1,117 @@
+// =============================================================================
+// Housekeeping Extended — Linen, Amenities, Mini Bar, Inspections, Deep Clean
+// =============================================================================
+
+enum LinenStatus {
+  AVAILABLE
+  IN_LAUNDRY
+  DAMAGED
+  LOST
+  DISPOSED
+}
+
+model LinenInventory {
+  id            String      @id @default(uuid()) @db.Uuid
+  hotelId       String      @map("hotel_id") @db.Uuid
+  itemName      String      @map("item_name") @db.VarChar(100)
+  category      String      @db.VarChar(50)
+  totalQuantity Int         @default(0) @map("total_quantity")
+  available     Int         @default(0)
+  inLaundry     Int         @default(0) @map("in_laundry")
+  damaged       Int         @default(0)
+  lost          Int         @default(0)
+  status        LinenStatus @default(AVAILABLE)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?   @map("deleted_at") @db.Timestamptz
+  isActive      Boolean     @default(true) @map("is_active")
+
+  @@unique([hotelId, itemName])
+  @@index([hotelId, category])
+  @@map("linen_inventory")
+}
+
+model AmenityRefillLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  roomId      String   @map("room_id") @db.Uuid
+  taskId      String?  @map("task_id") @db.Uuid
+  itemName    String   @map("item_name") @db.VarChar(100)
+  quantity    Int      @default(1)
+  refilledBy  String?  @map("refilled_by") @db.Uuid
+  refilledAt  DateTime @default(now()) @map("refilled_at") @db.Timestamptz
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, roomId])
+  @@map("amenity_refill_logs")
+}
+
+model MiniBarItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  roomId      String   @map("room_id") @db.Uuid
+  itemName    String   @map("item_name") @db.VarChar(100)
+  quantity    Int      @default(0)
+  parLevel    Int      @default(2) @map("par_level")
+  unitPrice   Decimal  @default(0) @map("unit_price") @db.Decimal(10, 2)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  isActive    Boolean  @default(true) @map("is_active")
+
+  consumptions MiniBarConsumption[]
+
+  @@unique([hotelId, roomId, itemName])
+  @@index([hotelId, roomId])
+  @@map("mini_bar_items")
+}
+
+model MiniBarConsumption {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  itemId      String   @map("item_id") @db.Uuid
+  roomId      String   @map("room_id") @db.Uuid
+  reservationId String? @map("reservation_id") @db.Uuid
+  quantity    Int      @default(1)
+  amount      Decimal  @default(0) @db.Decimal(12, 2)
+  consumedAt  DateTime @default(now()) @map("consumed_at") @db.Timestamptz
+  charged     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  item MiniBarItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, roomId])
+  @@map("mini_bar_consumptions")
+}
+
+model HousekeepingInspection {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  taskId       String   @map("task_id") @db.Uuid
+  roomId       String   @map("room_id") @db.Uuid
+  supervisorId String?  @map("supervisor_id") @db.Uuid
+  qualityScore Int      @map("quality_score") @db.SmallInt
+  status       String   @default("PENDING") @db.VarChar(30)
+  remarks      String?  @db.Text
+  photos       Json?
+  checklist    Json?
+  inspectedAt  DateTime @default(now()) @map("inspected_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, taskId])
+  @@index([hotelId, roomId])
+  @@map("housekeeping_inspections")
+}
+
+model DeepCleaningSchedule {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  roomId      String   @map("room_id") @db.Uuid
+  frequency   String   @db.VarChar(30)
+  nextDueDate DateTime @map("next_due_date") @db.Date
+  lastDoneAt  DateTime? @map("last_done_at") @db.Timestamptz
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([hotelId, nextDueDate])
+  @@map("deep_cleaning_schedules")
+}

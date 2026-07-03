@@ -1,0 +1,396 @@
+// =============================================================================
+// Enterprise Asset Management (EAM) / CMMS — TungaOS
+// =============================================================================
+
+enum WorkOrderStatus {
+  NEW
+  ASSIGNED
+  ACCEPTED
+  IN_PROGRESS
+  WAITING_FOR_PARTS
+  WAITING_VENDOR
+  PAUSED
+  COMPLETED
+  INSPECTED
+  CLOSED
+  CANCELLED
+}
+
+enum AssetLifecycleStage {
+  PURCHASED
+  INSTALLED
+  OPERATIONAL
+  INSPECTION
+  REPAIR
+  AMC
+  WARRANTY
+  UPGRADE
+  REPLACEMENT
+  DISPOSED
+}
+
+enum PmFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+  METER_BASED
+}
+
+enum MaintenanceRequestSource {
+  FRONT_DESK
+  HOUSEKEEPING
+  RESTAURANT
+  GUEST_PORTAL
+  MAINTENANCE_TEAM
+  MANAGER
+  IOT_DEVICE
+}
+
+enum CorrectiveType {
+  BREAKDOWN
+  FAULT
+  DAMAGE
+  LEAKAGE
+  ELECTRICAL
+  MECHANICAL
+  SOFTWARE
+  NETWORK
+}
+
+enum DepreciationMethod {
+  STRAIGHT_LINE
+  DECLINING_BALANCE
+  UNITS_OF_PRODUCTION
+}
+
+enum EamInspectionType {
+  ELECTRICAL
+  MECHANICAL
+  CLEANING
+  SAFETY
+  PERFORMANCE
+}
+
+enum SafetyEquipmentType {
+  FIRE_EXTINGUISHER
+  SMOKE_DETECTOR
+  EMERGENCY_LIGHT
+  EMERGENCY_EXIT
+  FIRST_AID_KIT
+}
+
+enum EnergyUtilityType {
+  ELECTRICITY
+  WATER
+  GAS
+  DIESEL
+  GENERATOR
+  SOLAR
+}
+
+model AssetCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  code        String   @db.VarChar(30)
+  description String?  @db.Text
+  iconKey     String?  @map("icon_key") @db.VarChar(50)
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  isActive    Boolean  @default(true) @map("is_active")
+
+  hotel  Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  assets Asset[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId])
+  @@map("asset_categories")
+}
+
+model WorkOrder {
+  id                   String              @id @default(uuid()) @db.Uuid
+  hotelId              String              @map("hotel_id") @db.Uuid
+  workOrderNumber      String              @map("work_order_number") @db.VarChar(30)
+  assetId              String?             @map("asset_id") @db.Uuid
+  roomId               String?             @map("room_id") @db.Uuid
+  maintenanceRequestId String?             @map("maintenance_request_id") @db.Uuid
+  department           String?             @db.VarChar(100)
+  priority             MaintenancePriority @default(MEDIUM)
+  issue                String              @db.VarChar(255)
+  description          String?             @db.Text
+  photos               Json?
+  assignedStaffId      String?             @map("assigned_staff_id") @db.Uuid
+  estimatedMinutes     Int?                @map("estimated_minutes")
+  startedAt            DateTime?           @map("started_at") @db.Timestamptz
+  completedAt          DateTime?           @map("completed_at") @db.Timestamptz
+  laborCost            Decimal             @default(0) @map("labor_cost") @db.Decimal(12, 2)
+  partsCost            Decimal             @default(0) @map("parts_cost") @db.Decimal(12, 2)
+  status               WorkOrderStatus     @default(NEW)
+  approvedBy           String?             @map("approved_by") @db.Uuid
+  approvedAt           DateTime?           @map("approved_at") @db.Timestamptz
+  attachments          Json?
+  isPreventive         Boolean             @default(false) @map("is_preventive")
+  pmPlanId             String?             @map("pm_plan_id") @db.Uuid
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt            DateTime?           @map("deleted_at") @db.Timestamptz
+  createdBy            String?             @map("created_by") @db.Uuid
+  updatedBy            String?             @map("updated_by") @db.Uuid
+  isActive             Boolean             @default(true) @map("is_active")
+
+  asset              Asset?               @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  room               Room?                @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  maintenanceRequest MaintenanceRequest?  @relation(fields: [maintenanceRequestId], references: [id], onDelete: SetNull)
+  assignedStaff      Staff?               @relation("AssignedWorkOrder", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  pmPlan             PreventiveMaintenancePlan? @relation(fields: [pmPlanId], references: [id], onDelete: SetNull)
+  parts              WorkOrderPart[]
+  inspections        MaintenanceInspection[]
+  logs               MaintenanceLog[]
+
+  @@unique([hotelId, workOrderNumber])
+  @@index([hotelId, status])
+  @@index([hotelId, priority])
+  @@index([hotelId, assetId])
+  @@index([hotelId, assignedStaffId])
+  @@map("work_orders")
+}
+
+model WorkOrderPart {
+  id              String   @id @default(uuid()) @db.Uuid
+  hotelId         String   @map("hotel_id") @db.Uuid
+  workOrderId     String   @map("work_order_id") @db.Uuid
+  inventoryItemId String?  @map("inventory_item_id") @db.Uuid
+  partName        String   @map("part_name") @db.VarChar(255)
+  quantity        Decimal  @default(1) @db.Decimal(12, 3)
+  unitCost        Decimal  @default(0) @map("unit_cost") @db.Decimal(12, 2)
+  totalCost       Decimal  @default(0) @map("total_cost") @db.Decimal(12, 2)
+  issuedAt        DateTime @default(now()) @map("issued_at") @db.Timestamptz
+  returnedQty     Decimal  @default(0) @map("returned_qty") @db.Decimal(12, 3)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  workOrder     WorkOrder      @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, workOrderId])
+  @@map("work_order_parts")
+}
+
+model PreventiveMaintenancePlan {
+  id              String      @id @default(uuid()) @db.Uuid
+  hotelId         String      @map("hotel_id") @db.Uuid
+  assetId         String      @map("asset_id") @db.Uuid
+  name            String      @db.VarChar(255)
+  frequency       PmFrequency @default(MONTHLY)
+  meterThreshold  Decimal?    @map("meter_threshold") @db.Decimal(12, 2)
+  nextDueAt       DateTime?   @map("next_due_at") @db.Timestamptz
+  lastRunAt       DateTime?   @map("last_run_at") @db.Timestamptz
+  checklist       Json?
+  estimatedMinutes Int?       @map("estimated_minutes")
+  isActive        Boolean     @default(true) @map("is_active")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  asset      Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  workOrders WorkOrder[]
+
+  @@index([hotelId, assetId])
+  @@index([hotelId, nextDueAt])
+  @@map("preventive_maintenance_plans")
+}
+
+model AssetAmcContract {
+  id              String   @id @default(uuid()) @db.Uuid
+  hotelId         String   @map("hotel_id") @db.Uuid
+  assetId         String?  @map("asset_id") @db.Uuid
+  contractNumber  String   @map("contract_number") @db.VarChar(50)
+  vendorName      String   @map("vendor_name") @db.VarChar(255)
+  coverage        String?  @db.Text
+  startDate       DateTime @map("start_date") @db.Date
+  endDate         DateTime @map("end_date") @db.Date
+  renewalDate     DateTime? @map("renewal_date") @db.Date
+  serviceVisits   Int      @default(0) @map("service_visits")
+  slaHours        Int?     @map("sla_hours")
+  cost            Decimal  @default(0) @db.Decimal(12, 2)
+  attachments     Json?
+  status          String   @default("ACTIVE") @db.VarChar(30)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  asset Asset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@unique([hotelId, contractNumber])
+  @@index([hotelId, endDate])
+  @@map("asset_amc_contracts")
+}
+
+model AssetWarrantyClaim {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  assetId      String   @map("asset_id") @db.Uuid
+  claimNumber  String   @map("claim_number") @db.VarChar(50)
+  description  String?  @db.Text
+  oemService   String?  @map("oem_service") @db.VarChar(255)
+  status       String   @default("OPEN") @db.VarChar(30)
+  claimDate    DateTime @default(now()) @map("claim_date") @db.Timestamptz
+  resolvedAt   DateTime? @map("resolved_at") @db.Timestamptz
+  cost         Decimal  @default(0) @db.Decimal(12, 2)
+  attachments  Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, claimNumber])
+  @@index([hotelId, assetId])
+  @@map("asset_warranty_claims")
+}
+
+model MaintenanceInspection {
+  id           String            @id @default(uuid()) @db.Uuid
+  hotelId      String            @map("hotel_id") @db.Uuid
+  workOrderId  String?           @map("work_order_id") @db.Uuid
+  assetId      String?           @map("asset_id") @db.Uuid
+  inspectionType EamInspectionType @map("inspection_type")
+  checklist    Json?
+  photos       Json?
+  remarks      String?           @db.Text
+  passed       Boolean?
+  approvedBy   String?           @map("approved_by") @db.Uuid
+  approvedAt   DateTime?         @map("approved_at") @db.Timestamptz
+  inspectedAt  DateTime          @default(now()) @map("inspected_at") @db.Timestamptz
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  asset     Asset?     @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, assetId])
+  @@map("maintenance_inspections")
+}
+
+model MaintenanceTeam {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  department  String?  @db.VarChar(100)
+  leadStaffId String?  @map("lead_staff_id") @db.Uuid
+  memberIds   String[] @default([]) @map("member_ids")
+  skills      String[] @default([])
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([hotelId])
+  @@map("maintenance_teams")
+}
+
+model TechnicianProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  hotelId           String   @map("hotel_id") @db.Uuid
+  staffId           String   @unique @map("staff_id") @db.Uuid
+  skills            String[] @default([])
+  certifications    String[] @default([])
+  department        String?  @db.VarChar(100)
+  avgResponseMinutes Int?    @map("avg_response_minutes")
+  completedJobs     Int      @default(0) @map("completed_jobs")
+  performanceScore  Decimal? @map("performance_score") @db.Decimal(5, 2)
+  isAvailable       Boolean  @default(true) @map("is_available")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("technician_profiles")
+}
+
+model AssetHistory {
+  id        String              @id @default(uuid()) @db.Uuid
+  hotelId   String              @map("hotel_id") @db.Uuid
+  assetId   String              @map("asset_id") @db.Uuid
+  event     AssetLifecycleStage
+  notes     String?             @db.Text
+  metadata  Json?
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  createdBy String?             @map("created_by") @db.Uuid
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, assetId, createdAt(sort: Desc)])
+  @@map("asset_history")
+}
+
+model AssetDocument {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  docType   String   @map("doc_type") @db.VarChar(50)
+  fileName  String   @map("file_name") @db.VarChar(255)
+  fileUrl   String   @map("file_url") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, assetId])
+  @@map("asset_documents")
+}
+
+model EnergyReading {
+  id           String            @id @default(uuid()) @db.Uuid
+  hotelId      String            @map("hotel_id") @db.Uuid
+  utilityType  EnergyUtilityType @map("utility_type")
+  department   String?           @db.VarChar(100)
+  roomId       String?           @map("room_id") @db.Uuid
+  readingValue Decimal           @map("reading_value") @db.Decimal(14, 3)
+  unit         String            @default("kWh") @db.VarChar(20)
+  readingAt    DateTime          @map("reading_at") @db.Timestamptz
+  meterId      String?           @map("meter_id") @db.VarChar(100)
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  room Room? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, utilityType, readingAt(sort: Desc)])
+  @@map("energy_readings")
+}
+
+model SafetyInspectionRecord {
+  id             String              @id @default(uuid()) @db.Uuid
+  hotelId        String              @map("hotel_id") @db.Uuid
+  equipmentType  SafetyEquipmentType @map("equipment_type")
+  location       String              @db.VarChar(255)
+  assetId        String?             @map("asset_id") @db.Uuid
+  lastInspected  DateTime?           @map("last_inspected") @db.Timestamptz
+  nextDue        DateTime?           @map("next_due") @db.Timestamptz
+  complianceStatus String            @default("COMPLIANT") @map("compliance_status") @db.VarChar(30)
+  checklist      Json?
+  photos         Json?
+  remarks        String?             @db.Text
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  asset Asset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, equipmentType])
+  @@map("safety_inspection_records")
+}
+
+model MaintenanceLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  workOrderId String?  @map("work_order_id") @db.Uuid
+  assetId     String?  @map("asset_id") @db.Uuid
+  action      String   @db.VarChar(100)
+  details     String?  @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  asset     Asset?     @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("maintenance_logs")
+}

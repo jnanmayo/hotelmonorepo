@@ -1,0 +1,78 @@
+// =============================================================================
+// Room Management — Inspection, Damage, Room-scoped assets
+// =============================================================================
+
+model RoomInspection {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  roomId       String   @map("room_id") @db.Uuid
+  qualityScore Int      @map("quality_score") @db.SmallInt
+  status       String   @default("PENDING") @db.VarChar(30)
+  remarks      String?  @db.Text
+  checklist    Json?
+  photos       Json?
+  approvedBy   String?  @map("approved_by") @db.Uuid
+  approvedAt   DateTime? @map("approved_at") @db.Timestamptz
+  inspectedAt  DateTime @default(now()) @map("inspected_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy    String?  @map("created_by") @db.Uuid
+  updatedBy    String?  @map("updated_by") @db.Uuid
+  isActive     Boolean  @default(true) @map("is_active")
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, roomId, inspectedAt(sort: Desc)])
+  @@map("room_inspections")
+}
+
+model RoomDamage {
+  id                String   @id @default(uuid()) @db.Uuid
+  hotelId           String   @map("hotel_id") @db.Uuid
+  roomId            String   @map("room_id") @db.Uuid
+  itemName          String   @map("item_name") @db.VarChar(255)
+  description       String?  @db.Text
+  estimatedCost     Decimal  @default(0) @map("estimated_cost") @db.Decimal(12, 2)
+  recoveryAmount    Decimal  @default(0) @map("recovery_amount") @db.Decimal(12, 2)
+  repairStatus      String   @default("REPORTED") @map("repair_status") @db.VarChar(30)
+  responsibleGuestId String? @map("responsible_guest_id") @db.Uuid
+  photos            Json?
+  reportedAt        DateTime @default(now()) @map("reported_at") @db.Timestamptz
+  resolvedAt        DateTime? @map("resolved_at") @db.Timestamptz
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy         String?  @map("created_by") @db.Uuid
+  isActive          Boolean  @default(true) @map("is_active")
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, roomId])
+  @@index([hotelId, repairStatus])
+  @@map("room_damages")
+}
+
+model RoomAsset {
+  id              String   @id @default(uuid()) @db.Uuid
+  hotelId         String   @map("hotel_id") @db.Uuid
+  roomId          String   @map("room_id") @db.Uuid
+  name            String   @db.VarChar(255)
+  assetType       String   @map("asset_type") @db.VarChar(100)
+  serialNumber    String?  @map("serial_number") @db.VarChar(100)
+  purchaseDate    DateTime? @map("purchase_date") @db.Date
+  warrantyUntil   DateTime? @map("warranty_until") @db.Date
+  amcUntil        DateTime? @map("amc_until") @db.Date
+  condition       String   @default("GOOD") @db.VarChar(30)
+  replacementDate DateTime? @map("replacement_date") @db.Date
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
+  isActive        Boolean  @default(true) @map("is_active")
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, roomId])
+  @@map("room_assets")
+}

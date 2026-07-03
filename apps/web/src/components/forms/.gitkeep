@@ -1,0 +1,8 @@
+/**
+ * Reusable form building blocks.
+ *
+ * - form-field/       Label + error + description wrapper
+ * - form-section/     Grouped form sections
+ * - date-picker/      Check-in/check-out date picker
+ * - guest-selector/   Adults/children/rooms selector
+ */

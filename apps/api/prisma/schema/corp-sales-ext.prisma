@@ -1,0 +1,439 @@
+// =============================================================================
+// Enterprise Corporate Sales, KAM & Contract Management — TungaOS
+// =============================================================================
+
+enum CorpContractStatus {
+  DRAFT
+  LEGAL_REVIEW
+  PENDING_APPROVAL
+  APPROVED
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWAL
+}
+
+enum CorpSalesLeadStatus {
+  NEW
+  QUALIFIED
+  MEETING_SCHEDULED
+  PROPOSAL_SENT
+  NEGOTIATION
+  LEGAL_REVIEW
+  CONTRACT_DRAFT
+  APPROVED
+  WON
+  LOST
+  RENEWAL
+}
+
+enum CorpSalesLeadSource {
+  WEBSITE
+  COLD_CALLING
+  LINKEDIN
+  REFERRAL
+  EMAIL_CAMPAIGN
+  TRADE_SHOW
+  CONFERENCE
+  WALK_IN
+  GOOGLE_ADS
+  PARTNER
+  OTHER
+}
+
+enum CorpRatePlanType {
+  STANDARD
+  LONG_STAY
+  PROJECT
+  CREW
+  GOVERNMENT
+  VOLUME
+  PREFERRED_PARTNER
+}
+
+enum CorpRatePlanStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  ACTIVE
+  EXPIRED
+}
+
+enum CorpSalesTaskType {
+  CALL
+  VISIT
+  PROPOSAL
+  RENEWAL
+  PAYMENT
+  BIRTHDAY
+  ANNIVERSARY
+  FOLLOW_UP
+}
+
+enum CorpSalesTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum CorpMeetingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum CorpApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ESCALATED
+}
+
+enum CorpApprovalType {
+  TRAVEL_DESK
+  DEPARTMENT_HEAD
+  FINANCE
+  COMPANY
+  HOTEL
+  RATE
+  CONTRACT
+}
+
+enum CorpBillingInvoiceStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum CorpDocumentType {
+  CONTRACT
+  NDA
+  GST_CERTIFICATE
+  PAN
+  MSME
+  PURCHASE_ORDER
+  RATE_AGREEMENT
+  EMAIL
+  MEETING_NOTES
+  OTHER
+}
+
+enum CorpRoomAllocationType {
+  CORPORATE
+  LONG_STAY
+  VIP
+  CONFERENCE
+  EMERGENCY
+}
+
+model CorpSalesLead {
+  id               String              @id @default(uuid()) @db.Uuid
+  hotelId          String              @map("hotel_id") @db.Uuid
+  leadCode         String              @map("lead_code") @db.VarChar(30)
+  companyName      String              @map("company_name") @db.VarChar(255)
+  industry         String?             @db.VarChar(100)
+  contactName      String?             @map("contact_name") @db.VarChar(200)
+  email            String?             @db.VarChar(255)
+  phone            String?             @db.VarChar(30)
+  source           CorpSalesLeadSource @default(WEBSITE)
+  status           CorpSalesLeadStatus @default(NEW)
+  leadScore        Int                 @default(0) @map("lead_score")
+  expectedRevenue  Decimal?            @map("expected_revenue") @db.Decimal(14, 2)
+  expectedRoomNights Int?            @map("expected_room_nights")
+  decisionMaker    String?             @map("decision_maker") @db.VarChar(200)
+  probability      Int                 @default(20)
+  assignedTo       String?             @map("assigned_to") @db.Uuid
+  companyId        String?             @map("company_id") @db.Uuid
+  notes            String?             @db.Text
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime?           @map("deleted_at") @db.Timestamptz
+  createdBy        String?             @map("created_by") @db.Uuid
+
+  company CorporateCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@unique([hotelId, leadCode])
+  @@index([hotelId, status])
+  @@map("corp_sales_leads")
+}
+
+model CorpCompanyContact {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  contactType String   @map("contact_type") @db.VarChar(50)
+  name        String   @db.VarChar(200)
+  designation String?  @db.VarChar(100)
+  email       String?  @db.VarChar(255)
+  phone       String?  @db.VarChar(30)
+  whatsapp    String?  @db.VarChar(30)
+  isPrimary   Boolean  @default(false) @map("is_primary")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId])
+  @@map("corp_company_contacts")
+}
+
+model CorpAccountTeam {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  companyId    String   @map("company_id") @db.Uuid
+  role         String   @db.VarChar(50)
+  staffName    String   @map("staff_name") @db.VarChar(200)
+  staffId      String?  @map("staff_id") @db.Uuid
+  assignedAt   DateTime @default(now()) @map("assigned_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId])
+  @@map("corp_account_teams")
+}
+
+model CorpSalesMeeting {
+  id           String            @id @default(uuid()) @db.Uuid
+  hotelId      String            @map("hotel_id") @db.Uuid
+  companyId    String            @map("company_id") @db.Uuid
+  title        String            @db.VarChar(255)
+  meetingDate  DateTime          @map("meeting_date") @db.Timestamptz
+  participants Json?
+  agenda       String?           @db.Text
+  minutes      String?           @db.Text
+  actionItems  Json?             @map("action_items")
+  followUpDate DateTime?         @map("follow_up_date") @db.Date
+  status       CorpMeetingStatus @default(SCHEDULED)
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId, meetingDate])
+  @@map("corp_sales_meetings")
+}
+
+model CorpSalesActivity {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  activityType String  @map("activity_type") @db.VarChar(50)
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  nextAction  String?  @map("next_action") @db.VarChar(255)
+  occurredAt  DateTime @map("occurred_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId, occurredAt(sort: Desc)])
+  @@map("corp_sales_activities")
+}
+
+model CorpRatePlan {
+  id           String             @id @default(uuid()) @db.Uuid
+  hotelId      String             @map("hotel_id") @db.Uuid
+  companyId    String             @map("company_id") @db.Uuid
+  contractId   String?            @map("contract_id") @db.Uuid
+  code         String             @db.VarChar(30)
+  name         String             @db.VarChar(150)
+  rateType     CorpRatePlanType   @map("rate_type")
+  status       CorpRatePlanStatus @default(DRAFT)
+  baseRate     Decimal            @default(0) @map("base_rate") @db.Decimal(12, 2)
+  discountPct  Decimal            @default(0) @map("discount_pct") @db.Decimal(5, 2)
+  volumeTiers  Json?              @map("volume_tiers")
+  validFrom    DateTime?          @map("valid_from") @db.Date
+  validTo      DateTime?          @map("valid_to") @db.Date
+  approvedAt   DateTime?          @map("approved_at") @db.Timestamptz
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, code])
+  @@index([hotelId, companyId, status])
+  @@map("corp_rate_plans")
+}
+
+model CorpRoomAllocation {
+  id             String               @id @default(uuid()) @db.Uuid
+  hotelId        String               @map("hotel_id") @db.Uuid
+  companyId      String               @map("company_id") @db.Uuid
+  allocationType CorpRoomAllocationType @map("allocation_type")
+  roomTypeId     String?              @map("room_type_id") @db.Uuid
+  roomCount      Int                  @default(1) @map("room_count")
+  startDate      DateTime             @map("start_date") @db.Date
+  endDate        DateTime             @map("end_date") @db.Date
+  pmsSynced      Boolean              @default(false) @map("pms_synced")
+  notes          String?              @db.Text
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId, startDate])
+  @@map("corp_room_allocations")
+}
+
+model CorpSalesTask {
+  id          String              @id @default(uuid()) @db.Uuid
+  hotelId     String              @map("hotel_id") @db.Uuid
+  companyId   String?             @map("company_id") @db.Uuid
+  taskType    CorpSalesTaskType   @map("task_type")
+  title       String              @db.VarChar(255)
+  dueDate     DateTime?           @map("due_date") @db.Timestamptz
+  status      CorpSalesTaskStatus @default(PENDING)
+  assignedTo  String?             @map("assigned_to") @db.Uuid
+  notes       String?             @db.Text
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  company CorporateCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, status, dueDate])
+  @@map("corp_sales_tasks")
+}
+
+model CorpSalesDocument {
+  id           String           @id @default(uuid()) @db.Uuid
+  hotelId      String           @map("hotel_id") @db.Uuid
+  companyId    String           @map("company_id") @db.Uuid
+  documentType CorpDocumentType @map("document_type")
+  title        String           @db.VarChar(255)
+  fileUrl      String?          @map("file_url") @db.VarChar(1000)
+  uploadedAt   DateTime         @default(now()) @map("uploaded_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId, documentType])
+  @@map("corp_sales_documents")
+}
+
+model CorpCreditAccount {
+  id               String   @id @default(uuid()) @db.Uuid
+  hotelId          String   @map("hotel_id") @db.Uuid
+  companyId        String   @unique @map("company_id") @db.Uuid
+  creditLimit      Decimal  @default(0) @map("credit_limit") @db.Decimal(14, 2)
+  availableCredit  Decimal  @default(0) @map("available_credit") @db.Decimal(14, 2)
+  outstandingAmount Decimal @default(0) @map("outstanding_amount") @db.Decimal(14, 2)
+  overdueAmount    Decimal  @default(0) @map("overdue_amount") @db.Decimal(14, 2)
+  isBlocked        Boolean  @default(false) @map("is_blocked")
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("corp_credit_accounts")
+}
+
+model CorpBillingInvoice {
+  id            String                   @id @default(uuid()) @db.Uuid
+  hotelId       String                   @map("hotel_id") @db.Uuid
+  companyId     String                   @map("company_id") @db.Uuid
+  invoiceNumber String                   @map("invoice_number") @db.VarChar(30)
+  billingPeriod String                   @map("billing_period") @db.VarChar(20)
+  invoiceType   String                   @default("monthly") @map("invoice_type") @db.VarChar(50)
+  subtotal      Decimal                  @default(0) @db.Decimal(14, 2)
+  taxAmount     Decimal                  @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  totalAmount   Decimal                  @default(0) @map("total_amount") @db.Decimal(14, 2)
+  paidAmount    Decimal                  @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  status        CorpBillingInvoiceStatus @default(DRAFT)
+  dueDate       DateTime?                @map("due_date") @db.Date
+  issuedAt      DateTime?                @map("issued_at") @db.Timestamptz
+  createdAt     DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, invoiceNumber])
+  @@index([hotelId, companyId, status])
+  @@map("corp_billing_invoices")
+}
+
+model CorpBillingPayment {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  invoiceId   String?  @map("invoice_id") @db.Uuid
+  amount      Decimal  @db.Decimal(14, 2)
+  reference   String?  @db.VarChar(100)
+  paidAt      DateTime @default(now()) @map("paid_at") @db.Timestamptz
+  notes       String?  @db.Text
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId, paidAt])
+  @@map("corp_billing_payments")
+}
+
+model CorpContractRenewal {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  companyId    String   @map("company_id") @db.Uuid
+  contractId   String   @map("contract_id") @db.Uuid
+  expiryDate   DateTime @map("expiry_date") @db.Date
+  notifyDays   Int      @map("notify_days")
+  status       String   @default("pending") @db.VarChar(30)
+  renewedAt    DateTime? @map("renewed_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  company  CorporateCompany  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contract CorporateContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, expiryDate])
+  @@map("corp_contract_renewals")
+}
+
+model CorpSalesTarget {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  periodType   String   @map("period_type") @db.VarChar(20)
+  periodLabel  String   @map("period_label") @db.VarChar(30)
+  revenueTarget Decimal @default(0) @map("revenue_target") @db.Decimal(14, 2)
+  roomNightTarget Int   @default(0) @map("room_night_target")
+  achievedRevenue Decimal @default(0) @map("achieved_revenue") @db.Decimal(14, 2)
+  achievedRoomNights Int @default(0) @map("achieved_room_nights")
+  assignedTo   String?  @map("assigned_to") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, periodLabel])
+  @@map("corp_sales_targets")
+}
+
+model CorpSalesCommission {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  companyId    String?  @map("company_id") @db.Uuid
+  recipientName String  @map("recipient_name") @db.VarChar(200)
+  commissionType String @map("commission_type") @db.VarChar(50)
+  baseAmount   Decimal  @default(0) @map("base_amount") @db.Decimal(14, 2)
+  commissionPct Decimal @default(0) @map("commission_pct") @db.Decimal(5, 2)
+  commissionAmount Decimal @default(0) @map("commission_amount") @db.Decimal(14, 2)
+  status       String   @default("pending") @db.VarChar(30)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  company CorporateCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, status])
+  @@map("corp_sales_commissions")
+}
+
+model CorpApprovalRequest {
+  id           String             @id @default(uuid()) @db.Uuid
+  hotelId      String             @map("hotel_id") @db.Uuid
+  companyId    String             @map("company_id") @db.Uuid
+  approvalType CorpApprovalType   @map("approval_type")
+  title        String             @db.VarChar(255)
+  status       CorpApprovalStatus @default(PENDING)
+  requestedBy  String?            @map("requested_by") @db.Uuid
+  approvedBy   String?            @map("approved_by") @db.Uuid
+  notes        String?            @db.Text
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  resolvedAt   DateTime?          @map("resolved_at") @db.Timestamptz
+
+  company CorporateCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, companyId, status])
+  @@map("corp_approval_requests")
+}

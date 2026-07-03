@@ -1,0 +1,6 @@
+/**
+ * Shadcn UI primitive components.
+ * Generated via: pnpm dlx shadcn@latest add <component>
+ *
+ * Examples: button, input, card, dialog, table, select, calendar, etc.
+ */

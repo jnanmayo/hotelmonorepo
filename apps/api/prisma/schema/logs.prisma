@@ -1,0 +1,179 @@
+// =============================================================================
+// Modules 82-88: Audit, Activity, API/Error Logs, File Storage, Attachments
+// =============================================================================
+
+model AuditLog {
+  id         String     @id @default(uuid()) @db.Uuid
+  hotelId    String?    @map("hotel_id") @db.Uuid
+  userId     String?    @map("user_id") @db.Uuid
+  action     AuditAction
+  entityType String     @map("entity_type") @db.VarChar(50)
+  entityId   String?    @map("entity_id") @db.Uuid
+  oldValues  Json?      @map("old_values")
+  newValues  Json?      @map("new_values")
+  ipAddress  String?    @map("ip_address") @db.VarChar(45)
+  userAgent  String?    @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime?  @map("deleted_at") @db.Timestamptz
+  createdBy  String?    @map("created_by") @db.Uuid
+  updatedBy  String?    @map("updated_by") @db.Uuid
+  deletedBy  String?    @map("deleted_by") @db.Uuid
+  isActive   Boolean    @default(true) @map("is_active")
+  version    Int        @default(1)
+
+  hotel Hotel? @relation(fields: [hotelId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, entityType, entityId])
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String?  @map("hotel_id") @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  action      String   @db.VarChar(100)
+  description String?  @db.Text
+  module      String?  @db.VarChar(50)
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("activity_logs")
+}
+
+model ApiLog {
+  id           String          @id @default(uuid()) @db.Uuid
+  hotelId      String?         @map("hotel_id") @db.Uuid
+  userId       String?         @map("user_id") @db.Uuid
+  direction    ApiLogDirection @default(INBOUND)
+  method       String?         @db.VarChar(10)
+  path         String?         @db.VarChar(500)
+  statusCode   Int?            @map("status_code")
+  durationMs   Int?            @map("duration_ms")
+  requestBody  Json?           @map("request_body")
+  responseBody Json?           @map("response_body")
+  ipAddress    String?         @map("ip_address") @db.VarChar(45)
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime?       @map("deleted_at") @db.Timestamptz
+  createdBy    String?         @map("created_by") @db.Uuid
+  updatedBy    String?         @map("updated_by") @db.Uuid
+  deletedBy    String?         @map("deleted_by") @db.Uuid
+  isActive     Boolean         @default(true) @map("is_active")
+  version      Int             @default(1)
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@index([path, createdAt(sort: Desc)])
+  @@map("api_logs")
+}
+
+model ErrorLog {
+  id         String        @id @default(uuid()) @db.Uuid
+  hotelId    String?       @map("hotel_id") @db.Uuid
+  severity   ErrorSeverity @default(MEDIUM)
+  errorCode  String?       @map("error_code") @db.VarChar(50)
+  message    String        @db.Text
+  stackTrace String?       @map("stack_trace") @db.Text
+  module     String?       @db.VarChar(50)
+  requestId  String?       @map("request_id") @db.VarChar(100)
+  metadata   Json?
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime?     @map("deleted_at") @db.Timestamptz
+  createdBy  String?       @map("created_by") @db.Uuid
+  updatedBy  String?       @map("updated_by") @db.Uuid
+  deletedBy  String?       @map("deleted_by") @db.Uuid
+  isActive   Boolean       @default(true) @map("is_active")
+  version    Int           @default(1)
+
+  @@index([hotelId, severity, createdAt(sort: Desc)])
+  @@index([errorCode])
+  @@map("error_logs")
+}
+
+// Module 87: File Storage — URLs only, files on S3/CloudFront
+model StoredFile {
+  id          String       @id @default(uuid()) @db.Uuid
+  hotelId     String       @map("hotel_id") @db.Uuid
+  category    FileCategory @default(OTHER)
+  fileName    String       @map("file_name") @db.VarChar(255)
+  fileUrl     String       @map("file_url") @db.VarChar(1000)
+  mimeType    String?      @map("mime_type") @db.VarChar(100)
+  fileSize    Int?         @map("file_size")
+  storageKey  String?      @map("storage_key") @db.VarChar(500)
+  checksum    String?      @db.VarChar(64)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz
+  createdBy   String?      @map("created_by") @db.Uuid
+  updatedBy   String?      @map("updated_by") @db.Uuid
+  deletedBy   String?      @map("deleted_by") @db.Uuid
+  isActive    Boolean      @default(true) @map("is_active")
+  version     Int          @default(1)
+
+  hotel           Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  guestDocuments  GuestDocument[]
+  staffDocuments  StaffDocument[]
+  roomImages      RoomImage[]
+  attachments     Attachment[]
+
+  @@index([hotelId, category])
+  @@index([hotelId, storageKey])
+  @@map("stored_files")
+}
+
+// Module 88: Polymorphic Attachments
+model Attachment {
+  id         String               @id @default(uuid()) @db.Uuid
+  hotelId    String               @map("hotel_id") @db.Uuid
+  fileId     String               @map("file_id") @db.Uuid
+  entityType AttachmentEntityType @map("entity_type")
+  entityId   String               @map("entity_id") @db.Uuid
+  title      String?              @db.VarChar(255)
+  createdAt  DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime?            @map("deleted_at") @db.Timestamptz
+  createdBy  String?              @map("created_by") @db.Uuid
+  updatedBy  String?              @map("updated_by") @db.Uuid
+  deletedBy  String?              @map("deleted_by") @db.Uuid
+  isActive   Boolean              @default(true) @map("is_active")
+  version    Int                  @default(1)
+
+  file StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, entityType, entityId])
+  @@map("attachments")
+}
+
+// Encrypted secrets vault for API keys at platform/hotel level
+model EncryptedSecret {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String?  @map("hotel_id") @db.Uuid
+  keyName     String   @map("key_name") @db.VarChar(100)
+  encryptedValue String @map("encrypted_value") @db.Text
+  algorithm   String   @default("AES-256-GCM") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  @@unique([hotelId, keyName])
+  @@map("encrypted_secrets")
+}

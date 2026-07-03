@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tungaos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tungaos
+      POSTGRES_PASSWORD: tungaos_dev
+      POSTGRES_DB: tungaos
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tungaos -d tungaos']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: tungaos-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Uncomment when ready to containerize the API
+  # api:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/Dockerfile.api
+  #   container_name: tungaos-api
+  #   restart: unless-stopped
+  #   ports:
+  #     - '4000:4000'
+  #   env_file:
+  #     - ../apps/api/.env
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

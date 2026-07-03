@@ -1,0 +1,286 @@
+// =============================================================================
+// Modules 64-73: Notifications, Feedback, CRM, Marketing, Offers
+// =============================================================================
+
+model Notification {
+  id        String             @id @default(uuid()) @db.Uuid
+  hotelId   String             @map("hotel_id") @db.Uuid
+  userId    String?            @map("user_id") @db.Uuid
+  type      NotificationType
+  status    NotificationStatus @default(QUEUED)
+  title     String             @db.VarChar(255)
+  body      String?            @db.Text
+  channel   String?            @db.VarChar(50)
+  metadata  Json?
+  sentAt    DateTime?          @map("sent_at") @db.Timestamptz
+  readAt    DateTime?          @map("read_at") @db.Timestamptz
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy String?            @map("created_by") @db.Uuid
+  updatedBy String?            @map("updated_by") @db.Uuid
+  deletedBy String?            @map("deleted_by") @db.Uuid
+  isActive  Boolean            @default(true) @map("is_active")
+  version   Int                @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, userId, status])
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model WhatsAppLog {
+  id          String             @id @default(uuid()) @db.Uuid
+  hotelId     String             @map("hotel_id") @db.Uuid
+  recipient   String             @db.VarChar(30)
+  templateId  String?            @map("template_id") @db.VarChar(100)
+  message     String?            @db.Text
+  status      NotificationStatus @default(QUEUED)
+  providerRef String?            @map("provider_ref") @db.VarChar(255)
+  errorMessage String?           @map("error_message") @db.Text
+  sentAt      DateTime?          @map("sent_at") @db.Timestamptz
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy   String?            @map("created_by") @db.Uuid
+  updatedBy   String?            @map("updated_by") @db.Uuid
+  deletedBy   String?            @map("deleted_by") @db.Uuid
+  isActive    Boolean            @default(true) @map("is_active")
+  version     Int                @default(1)
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@index([hotelId, status])
+  @@map("whatsapp_logs")
+}
+
+model EmailLog {
+  id          String             @id @default(uuid()) @db.Uuid
+  hotelId     String             @map("hotel_id") @db.Uuid
+  recipient   String             @db.VarChar(255)
+  subject     String             @db.VarChar(500)
+  body        String?            @db.Text
+  status      NotificationStatus @default(QUEUED)
+  providerRef String?            @map("provider_ref") @db.VarChar(255)
+  errorMessage String?           @map("error_message") @db.Text
+  sentAt      DateTime?          @map("sent_at") @db.Timestamptz
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy   String?            @map("created_by") @db.Uuid
+  updatedBy   String?            @map("updated_by") @db.Uuid
+  deletedBy   String?            @map("deleted_by") @db.Uuid
+  isActive    Boolean            @default(true) @map("is_active")
+  version     Int                @default(1)
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("email_logs")
+}
+
+model SmsLog {
+  id          String             @id @default(uuid()) @db.Uuid
+  hotelId     String             @map("hotel_id") @db.Uuid
+  recipient   String             @db.VarChar(30)
+  message     String             @db.Text
+  status      NotificationStatus @default(QUEUED)
+  providerRef String?            @map("provider_ref") @db.VarChar(255)
+  errorMessage String?           @map("error_message") @db.Text
+  sentAt      DateTime?          @map("sent_at") @db.Timestamptz
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy   String?            @map("created_by") @db.Uuid
+  updatedBy   String?            @map("updated_by") @db.Uuid
+  deletedBy   String?            @map("deleted_by") @db.Uuid
+  isActive    Boolean            @default(true) @map("is_active")
+  version     Int                @default(1)
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("sms_logs")
+}
+
+model Feedback {
+  id            String       @id @default(uuid()) @db.Uuid
+  hotelId       String       @map("hotel_id") @db.Uuid
+  guestId       String?      @map("guest_id") @db.Uuid
+  reservationId String?      @map("reservation_id") @db.Uuid
+  type          FeedbackType @default(GENERAL)
+  rating        Int?         @db.SmallInt
+  comment       String?      @db.Text
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?    @map("deleted_at") @db.Timestamptz
+  createdBy     String?      @map("created_by") @db.Uuid
+  updatedBy     String?      @map("updated_by") @db.Uuid
+  deletedBy     String?      @map("deleted_by") @db.Uuid
+  isActive      Boolean      @default(true) @map("is_active")
+  version       Int          @default(1)
+
+  guest       Guest?       @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, type])
+  @@map("feedbacks")
+}
+
+model Review {
+  id            String       @id @default(uuid()) @db.Uuid
+  hotelId       String       @map("hotel_id") @db.Uuid
+  guestId       String?      @map("guest_id") @db.Uuid
+  reservationId String?      @map("reservation_id") @db.Uuid
+  source        ReviewSource @default(INTERNAL)
+  rating        Int          @db.SmallInt
+  title         String?      @db.VarChar(255)
+  content       String?      @db.Text
+  isPublished   Boolean      @default(false) @map("is_published")
+  externalId    String?      @map("external_id") @db.VarChar(255)
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?    @map("deleted_at") @db.Timestamptz
+  createdBy     String?      @map("created_by") @db.Uuid
+  updatedBy     String?      @map("updated_by") @db.Uuid
+  deletedBy     String?      @map("deleted_by") @db.Uuid
+  isActive      Boolean      @default(true) @map("is_active")
+  version       Int          @default(1)
+
+  guest       Guest?       @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, isPublished])
+  @@index([hotelId, rating])
+  @@map("reviews")
+}
+
+model Complaint {
+  id          String            @id @default(uuid()) @db.Uuid
+  hotelId     String            @map("hotel_id") @db.Uuid
+  guestId     String?           @map("guest_id") @db.Uuid
+  title       String            @db.VarChar(255)
+  description String?           @db.Text
+  status      ComplaintStatus   @default(OPEN)
+  priority    ComplaintPriority @default(MEDIUM)
+  category    String?           @db.VarChar(50)
+  resolvedAt  DateTime?         @map("resolved_at") @db.Timestamptz
+  resolution  String?           @db.Text
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?         @map("deleted_at") @db.Timestamptz
+  createdBy   String?           @map("created_by") @db.Uuid
+  updatedBy   String?           @map("updated_by") @db.Uuid
+  deletedBy   String?           @map("deleted_by") @db.Uuid
+  isActive    Boolean           @default(true) @map("is_active")
+  version     Int               @default(1)
+
+  guest Guest? @relation(fields: [guestId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, status])
+  @@index([hotelId, priority])
+  @@map("complaints")
+}
+
+model CrmLead {
+  id          String        @id @default(uuid()) @db.Uuid
+  hotelId     String        @map("hotel_id") @db.Uuid
+  name        String        @db.VarChar(255)
+  email       String?       @db.VarChar(255)
+  phone       String?       @db.VarChar(30)
+  company     String?       @db.VarChar(255)
+  status      CrmLeadStatus @default(NEW)
+  source      String?       @db.VarChar(50)
+  estimatedValue Decimal?  @map("estimated_value") @db.Decimal(14, 2)
+  notes       String?       @db.Text
+  assignedTo  String?       @map("assigned_to") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz
+  createdBy   String?       @map("created_by") @db.Uuid
+  updatedBy   String?       @map("updated_by") @db.Uuid
+  deletedBy   String?       @map("deleted_by") @db.Uuid
+  isActive    Boolean       @default(true) @map("is_active")
+  version     Int           @default(1)
+
+  activities CrmActivity[]
+
+  @@index([hotelId, status])
+  @@map("crm_leads")
+}
+
+model CrmActivity {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  leadId      String   @map("lead_id") @db.Uuid
+  activityType String @map("activity_type") @db.VarChar(50)
+  subject     String   @db.VarChar(255)
+  notes       String?  @db.Text
+  scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  lead CrmLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, leadId])
+  @@map("crm_activities")
+}
+
+model MarketingCampaign {
+  id          String                  @id @default(uuid()) @db.Uuid
+  hotelId     String                  @map("hotel_id") @db.Uuid
+  name        String                  @db.VarChar(255)
+  code        String                  @db.VarChar(50)
+  status      MarketingCampaignStatus @default(DRAFT)
+  channel     String?                 @db.VarChar(50)
+  startsAt    DateTime?               @map("starts_at") @db.Timestamptz
+  endsAt      DateTime?               @map("ends_at") @db.Timestamptz
+  budget      Decimal?                @db.Decimal(14, 2)
+  targetAudience String?              @map("target_audience") @db.Text
+  content     String?                 @db.Text
+  createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?               @map("deleted_at") @db.Timestamptz
+  createdBy   String?                 @map("created_by") @db.Uuid
+  updatedBy   String?                 @map("updated_by") @db.Uuid
+  deletedBy   String?                 @map("deleted_by") @db.Uuid
+  isActive    Boolean                 @default(true) @map("is_active")
+  version     Int                     @default(1)
+
+  @@unique([hotelId, code])
+  @@index([hotelId, status])
+  @@map("marketing_campaigns")
+}
+
+model Offer {
+  id          String      @id @default(uuid()) @db.Uuid
+  hotelId     String      @map("hotel_id") @db.Uuid
+  title       String      @db.VarChar(255)
+  code        String      @db.VarChar(50)
+  description String?     @db.Text
+  status      OfferStatus @default(DRAFT)
+  discountType DiscountType @map("discount_type")
+  discountValue Decimal   @map("discount_value") @db.Decimal(12, 4)
+  imageUrl    String?     @map("image_url") @db.VarChar(1000)
+  startsAt    DateTime?   @map("starts_at") @db.Timestamptz
+  endsAt      DateTime?   @map("ends_at") @db.Timestamptz
+  terms       String?     @db.Text
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?   @map("deleted_at") @db.Timestamptz
+  createdBy   String?     @map("created_by") @db.Uuid
+  updatedBy   String?     @map("updated_by") @db.Uuid
+  deletedBy   String?     @map("deleted_by") @db.Uuid
+  isActive    Boolean     @default(true) @map("is_active")
+  version     Int         @default(1)
+
+  reservations Reservation[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId, status])
+  @@map("offers")
+}

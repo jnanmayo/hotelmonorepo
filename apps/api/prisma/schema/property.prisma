@@ -1,0 +1,262 @@
+// =============================================================================
+// Modules 11-16, 18-21: Property — Buildings, Floors, Rooms, Amenities, Assets
+// =============================================================================
+
+model Building {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  code        String   @db.VarChar(20)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  hotel  Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  floors Floor[]
+
+  @@unique([hotelId, code])
+  @@map("buildings")
+}
+
+model Floor {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  buildingId  String   @map("building_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  floorNumber Int      @map("floor_number")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  building Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  rooms    Room[]
+
+  @@unique([hotelId, buildingId, floorNumber])
+  @@index([hotelId, buildingId])
+  @@map("floors")
+}
+
+model RoomType {
+  id            String   @id @default(uuid()) @db.Uuid
+  hotelId       String   @map("hotel_id") @db.Uuid
+  name          String   @db.VarChar(100)
+  code          String   @db.VarChar(20)
+  description   String?  @db.Text
+  baseRate      Decimal  @default(0) @map("base_rate") @db.Decimal(12, 2)
+  maxOccupancy  Int      @default(2) @map("max_occupancy")
+  maxAdults     Int      @default(2) @map("max_adults")
+  maxChildren   Int      @default(0) @map("max_children")
+  sizeSqm       Decimal? @map("size_sqm") @db.Decimal(8, 2)
+  bedType       String?  @map("bed_type") @db.VarChar(50)
+  viewType      String?  @map("view_type") @db.VarChar(50)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy     String?  @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  deletedBy     String?  @map("deleted_by") @db.Uuid
+  isActive      Boolean  @default(true) @map("is_active")
+  version       Int      @default(1)
+
+  hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  rooms       Room[]
+  images      RoomImage[]
+  amenities   RoomTypeAmenity[]
+  reservations Reservation[]
+  dynamicPriceRules DynamicPriceRule[]
+  channelMappings   ChannelMapping[]
+  ratePlans         RatePlan[]
+  inventoryHolds    InventoryHold[]
+  cmsWebsiteRooms   CmsWebsiteRoom[]
+  channelRestrictions ChannelRestriction[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId, isActive])
+  @@map("room_types")
+}
+
+model Amenity {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  icon      String?  @db.VarChar(50)
+  category  String?  @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  roomTypes RoomTypeAmenity[]
+
+  @@unique([hotelId, name])
+  @@map("amenities")
+}
+
+model RoomTypeAmenity {
+  id         String   @id @default(uuid()) @db.Uuid
+  hotelId    String   @map("hotel_id") @db.Uuid
+  roomTypeId String   @map("room_type_id") @db.Uuid
+  amenityId  String   @map("amenity_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy  String?  @map("created_by") @db.Uuid
+  updatedBy  String?  @map("updated_by") @db.Uuid
+  deletedBy  String?  @map("deleted_by") @db.Uuid
+  isActive   Boolean  @default(true) @map("is_active")
+  version    Int      @default(1)
+
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([roomTypeId, amenityId])
+  @@map("room_type_amenities")
+}
+
+model RoomImage {
+  id         String   @id @default(uuid()) @db.Uuid
+  hotelId    String   @map("hotel_id") @db.Uuid
+  roomTypeId String   @map("room_type_id") @db.Uuid
+  fileId     String   @map("file_id") @db.Uuid
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy  String?  @map("created_by") @db.Uuid
+  updatedBy  String?  @map("updated_by") @db.Uuid
+  deletedBy  String?  @map("deleted_by") @db.Uuid
+  isActive   Boolean  @default(true) @map("is_active")
+  version    Int      @default(1)
+
+  roomType RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  file     StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, roomTypeId])
+  @@map("room_images")
+}
+
+model Room {
+  id          String     @id @default(uuid()) @db.Uuid
+  hotelId     String     @map("hotel_id") @db.Uuid
+  floorId     String     @map("floor_id") @db.Uuid
+  roomTypeId  String     @map("room_type_id") @db.Uuid
+  roomNumber  String        @map("room_number") @db.VarChar(20)
+  status      RoomStatus    @default(VACANT_CLEAN)
+  category    RoomCategory  @default(STANDARD)
+  isSmoking   Boolean       @default(false) @map("is_smoking")
+  isAccessible Boolean      @default(false) @map("is_accessible")
+  notes       String?       @db.Text
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?  @map("deleted_at") @db.Timestamptz
+  createdBy   String?    @map("created_by") @db.Uuid
+  updatedBy   String?    @map("updated_by") @db.Uuid
+  deletedBy   String?    @map("deleted_by") @db.Uuid
+  isActive    Boolean    @default(true) @map("is_active")
+  version     Int        @default(1)
+
+  hotel              Hotel              @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  floor              Floor              @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  roomType           RoomType           @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  reservations       Reservation[]
+  housekeepingTasks  HousekeepingTask[]
+  maintenanceRequests MaintenanceRequest[]
+  laundryOrders      LaundryOrder[]
+  roomBlocks         RoomBlock[]
+  roomTransfersFrom  RoomTransfer[]     @relation("RoomTransferFrom")
+  roomTransfersTo    RoomTransfer[]     @relation("RoomTransferTo")
+  statusHistory      RoomStatusHistory[]
+  checkInRecords     CheckInRecord[]
+  folioCharges       FolioCharge[]
+  inspections        RoomInspection[]
+  damages            RoomDamage[]
+  roomAssets         RoomAsset[]
+  eamAssets          Asset[]
+  workOrders         WorkOrder[]
+  energyReadings     EnergyReading[]
+
+  @@unique([hotelId, roomNumber])
+  @@index([hotelId, status])
+  @@index([hotelId, roomTypeId])
+  @@index([hotelId, floorId])
+  @@map("rooms")
+}
+
+model Asset {
+  id                 String               @id @default(uuid()) @db.Uuid
+  hotelId            String               @map("hotel_id") @db.Uuid
+  name               String               @db.VarChar(255)
+  code               String               @db.VarChar(50)
+  qrCode             String?              @map("qr_code") @db.VarChar(100)
+  barcode            String?              @db.VarChar(100)
+  category           String?              @db.VarChar(100)
+  categoryId         String?              @map("category_id") @db.Uuid
+  department         String?              @db.VarChar(100)
+  location           String?              @db.VarChar(255)
+  building           String?              @db.VarChar(100)
+  floor              String?              @db.VarChar(50)
+  roomId             String?              @map("room_id") @db.Uuid
+  serialNumber       String?              @map("serial_number") @db.VarChar(100)
+  manufacturer       String?              @db.VarChar(255)
+  model              String?              @db.VarChar(255)
+  vendorName         String?              @map("vendor_name") @db.VarChar(255)
+  purchaseDate       DateTime?            @map("purchase_date") @db.Date
+  installationDate   DateTime?            @map("installation_date") @db.Date
+  warrantyStart      DateTime?            @map("warranty_start") @db.Date
+  warrantyEnd        DateTime?            @map("warranty_end") @db.Date
+  amcStart           DateTime?            @map("amc_start") @db.Date
+  amcEnd             DateTime?            @map("amc_end") @db.Date
+  purchaseCost       Decimal?             @map("purchase_cost") @db.Decimal(12, 2)
+  currentValue       Decimal?             @map("current_value") @db.Decimal(12, 2)
+  usefulLifeYears    Int?                 @map("useful_life_years")
+  depreciationMethod DepreciationMethod?  @map("depreciation_method")
+  lifecycleStage     AssetLifecycleStage  @default(PURCHASED) @map("lifecycle_stage")
+  status             AssetStatus          @default(ACTIVE)
+  warrantyUntil      DateTime?            @map("warranty_until") @db.Date
+  imageUrl           String?              @map("image_url") @db.VarChar(500)
+  metadata           Json?
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime?            @map("deleted_at") @db.Timestamptz
+  createdBy          String?              @map("created_by") @db.Uuid
+  updatedBy          String?              @map("updated_by") @db.Uuid
+  deletedBy          String?              @map("deleted_by") @db.Uuid
+  isActive           Boolean              @default(true) @map("is_active")
+  version            Int                  @default(1)
+
+  hotel               Hotel                @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  room                Room?                @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  assetCategory       AssetCategory?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  maintenanceRequests MaintenanceRequest[]
+  workOrders          WorkOrder[]
+  pmPlans             PreventiveMaintenancePlan[]
+  amcContracts        AssetAmcContract[]
+  warrantyClaims      AssetWarrantyClaim[]
+  inspections         MaintenanceInspection[]
+  history             AssetHistory[]
+  documents           AssetDocument[]
+  safetyRecords       SafetyInspectionRecord[]
+  logs                MaintenanceLog[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId, status])
+  @@index([hotelId, roomId])
+  @@index([hotelId, categoryId])
+  @@map("assets")
+}

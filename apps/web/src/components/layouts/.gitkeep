@@ -1,0 +1,8 @@
+/**
+ * Application shell layouts.
+ *
+ * - public-layout/    Hotel website header, footer, nav
+ * - dashboard-layout/ Sidebar, topbar, breadcrumbs
+ * - auth-layout/      Centered auth card
+ * - portal-layout/    Corporate/guest portal shell
+ */

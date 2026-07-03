@@ -1,0 +1,216 @@
+// =============================================================================
+// Module 1: Hotel Master + Subscription
+// =============================================================================
+
+model Hotel {
+  id               String           @id @default(uuid()) @db.Uuid
+  slug             String           @unique @db.VarChar(100)
+  name             String           @db.VarChar(255)
+  brandName        String?          @map("brand_name") @db.VarChar(255)
+  legalName        String?          @map("legal_name") @db.VarChar(255)
+  gstNumber        String?          @map("gst_number") @db.VarChar(50)
+  panNumber        String?          @map("pan_number") @db.VarChar(20)
+  addressLine1     String?          @map("address_line1") @db.VarChar(500)
+  addressLine2     String?          @map("address_line2") @db.VarChar(500)
+  city             String?          @db.VarChar(100)
+  state            String?          @db.VarChar(100)
+  country          String           @default("IN") @db.VarChar(100)
+  postalCode       String?          @map("postal_code") @db.VarChar(20)
+  timezone         String           @default("Asia/Kolkata") @db.VarChar(50)
+  currency         String           @default("INR") @db.VarChar(3)
+  phone            String?          @db.VarChar(30)
+  email            String?          @db.VarChar(255)
+  website          String?          @db.VarChar(500)
+  logoUrl          String?          @map("logo_url") @db.VarChar(1000)
+  faviconUrl       String?          @map("favicon_url") @db.VarChar(1000)
+  primaryColor     String           @default("#001F3F") @map("primary_color") @db.VarChar(20)
+  secondaryColor   String           @default("#C9A227") @map("secondary_color") @db.VarChar(20)
+  accentColor      String           @default("#FFFFFF") @map("accent_color") @db.VarChar(20)
+  backgroundColor  String           @default("#F5F5F5") @map("background_color") @db.VarChar(20)
+  fontHeading      String           @default("Playfair Display") @map("font_heading") @db.VarChar(100)
+  fontBody         String           @default("Inter") @map("font_body") @db.VarChar(100)
+  subscriptionPlan SubscriptionPlan @default(TRIAL) @map("subscription_plan")
+  status           HotelStatus      @default(PENDING_SETUP)
+  checkInTime      String           @default("14:00") @map("check_in_time") @db.VarChar(10)
+  checkOutTime     String           @default("11:00") @map("check_out_time") @db.VarChar(10)
+  starRating       Int?             @map("star_rating") @db.SmallInt
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime?        @map("deleted_at") @db.Timestamptz
+  createdBy        String?          @map("created_by") @db.Uuid
+  updatedBy        String?          @map("updated_by") @db.Uuid
+  deletedBy        String?          @map("deleted_by") @db.Uuid
+  isActive         Boolean          @default(true) @map("is_active")
+  version          Int              @default(1)
+
+  subscription         HotelSubscription?
+  settings             HotelSetting[]
+  featureFlags         FeatureFlag[]
+  buildings            Building[]
+  staff                Staff[]
+  guests               Guest[]
+  reservations         Reservation[]
+  roomTypes            RoomType[]
+  rooms                Room[]
+  restaurants          Restaurant[]
+  taxes                Tax[]
+  inventoryCategories  InventoryCategory[]
+  inventoryStores      InventoryStore[]
+  inventoryPurchaseRequests InventoryPurchaseRequest[]
+  inventoryLogs        InventoryLog[]
+  vendorCategories     VendorCategory[]
+  procPurchaseRequests ProcPurchaseRequest[]
+  rfqs                 Rfq[]
+  vendorQuotations     VendorQuotation[]
+  vendorContracts      VendorContract[]
+  vendorRatings        VendorRating[]
+  procurementBudgets   ProcurementBudget[]
+  procurementApprovals ProcurementApproval[]
+  vendorInvoices       VendorInvoice[]
+  procurementLogs      ProcurementLog[]
+  purchaseReturns      PurchaseReturn[]
+  suppliers            Supplier[]
+  vendors              Vendor[]
+  corporateCompanies   CorporateCompany[]
+  accounts             Account[]
+  costCenters          CostCenter[]
+  finBudgets           FinBudget[]
+  finBankAccounts      FinBankAccount[]
+  notifications        Notification[]
+  storedFiles          StoredFile[]
+  auditLogs            AuditLog[]
+  cmsPages             CmsPage[]
+  cmsSections          CmsSection[]
+  cmsHeroSlides        CmsHeroSlide[]
+  cmsWebsiteRooms      CmsWebsiteRoom[]
+  cmsOffers            CmsOffer[]
+  cmsGalleryItems      CmsGalleryItem[]
+  cmsTestimonials      CmsTestimonial[]
+  cmsMediaFolders      CmsMediaFolder[]
+  cmsMediaAlbums       CmsMediaAlbum[]
+  cmsMediaFiles        CmsMediaFile[]
+  cmsSeo               CmsSeo[]
+  cmsMenus             CmsMenu[]
+  cmsForms             CmsForm[]
+  cmsFormSubmissions   CmsFormSubmission[]
+  cmsNewsletterSubs    CmsNewsletterSubscriber[]
+  cmsBlogPosts         CmsBlogPost[]
+  cmsBlogCategories    CmsBlogCategory[]
+  cmsRevisions         CmsRevision[]
+  cmsWebsiteSettings   CmsWebsiteSettings?
+  ratePlans            RatePlan[]
+  bookingAddons        BookingAddon[]
+  bookingAddonSelections BookingAddonSelection[]
+  inventoryHolds       InventoryHold[]
+  bookingEvents        BookingEvent[]
+  otaIntegrations      OtaIntegration[]
+  channelRestrictions  ChannelRestriction[]
+  channelSyncLogs      ChannelSyncLog[]
+  channelWebhookEvents ChannelWebhookEvent[]
+  channelCommissionLogs ChannelCommissionLog[]
+  channelSyncJobs      ChannelSyncJob[]
+  channelRatePlanMappings ChannelRatePlanMapping[]
+  travelAgents         TravelAgent[]
+  groupBookings        GroupBooking[]
+  nightAudits          NightAudit[]
+  guestRequests        GuestRequest[]
+  frontDeskTasks       FrontDeskTask[]
+  lostAndFoundItems    LostAndFoundItem[]
+  guestCommunications  GuestCommunication[]
+  vipGuestNotes        VipGuestNote[]
+  guestPortalSessions  GuestPortalSession[]
+  roomQrCodes          RoomQrCode[]
+  gxpRequests          GxpRequest[]
+  gxpChatMessages      GxpChatMessage[]
+  gxpFeedbacks         GxpFeedback[]
+  gxpOffers            GxpOffer[]
+  gxpAnnouncements     GxpAnnouncement[]
+  gxpNotifications     GxpNotification[]
+  assets               Asset[]
+  assetCategories      AssetCategory[]
+
+  @@index([status, isActive])
+  @@index([country, city])
+  @@index([deletedAt])
+  @@map("hotels")
+}
+
+model HotelSubscription {
+  id              String           @id @default(uuid()) @db.Uuid
+  hotelId         String           @unique @map("hotel_id") @db.Uuid
+  plan            SubscriptionPlan
+  maxRooms        Int              @default(50) @map("max_rooms")
+  maxUsers        Int              @default(25) @map("max_users")
+  maxStorageGb    Int              @default(10) @map("max_storage_gb")
+  enabledModules  String[]         @default([]) @map("enabled_modules")
+  billingCycle    String           @default("monthly") @map("billing_cycle") @db.VarChar(20)
+  amount          Decimal          @default(0) @db.Decimal(12, 2)
+  currency        String           @default("INR") @db.VarChar(3)
+  startsAt        DateTime         @map("starts_at") @db.Timestamptz
+  endsAt          DateTime?        @map("ends_at") @db.Timestamptz
+  trialEndsAt     DateTime?        @map("trial_ends_at") @db.Timestamptz
+  autoRenew       Boolean          @default(true) @map("auto_renew")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz
+  createdBy       String?          @map("created_by") @db.Uuid
+  updatedBy       String?          @map("updated_by") @db.Uuid
+  deletedBy       String?          @map("deleted_by") @db.Uuid
+  isActive        Boolean          @default(true) @map("is_active")
+  version         Int              @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_subscriptions")
+}
+
+// Module 89: Settings
+model HotelSetting {
+  id        String       @id @default(uuid()) @db.Uuid
+  hotelId   String       @map("hotel_id") @db.Uuid
+  scope     SettingScope @default(HOTEL)
+  module    String?      @db.VarChar(50)
+  key       String       @db.VarChar(100)
+  value     Json
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?    @map("deleted_at") @db.Timestamptz
+  createdBy String?      @map("created_by") @db.Uuid
+  updatedBy String?      @map("updated_by") @db.Uuid
+  deletedBy String?      @map("deleted_by") @db.Uuid
+  isActive  Boolean      @default(true) @map("is_active")
+  version   Int          @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, scope, module, key])
+  @@index([hotelId, module])
+  @@map("hotel_settings")
+}
+
+// Module 90: Feature Flags
+model FeatureFlag {
+  id          String           @id @default(uuid()) @db.Uuid
+  hotelId     String?          @map("hotel_id") @db.Uuid
+  scope       FeatureFlagScope @default(HOTEL)
+  key         String           @db.VarChar(100)
+  name        String           @db.VarChar(255)
+  description String?          @db.Text
+  isEnabled   Boolean          @default(false) @map("is_enabled")
+  plan        SubscriptionPlan?
+  metadata    Json?
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz
+  createdBy   String?          @map("created_by") @db.Uuid
+  updatedBy   String?          @map("updated_by") @db.Uuid
+  deletedBy   String?          @map("deleted_by") @db.Uuid
+  isActive    Boolean          @default(true) @map("is_active")
+  version     Int              @default(1)
+
+  hotel Hotel? @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, key])
+  @@index([scope, isEnabled])
+  @@map("feature_flags")
+}

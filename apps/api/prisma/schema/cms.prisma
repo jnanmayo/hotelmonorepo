@@ -1,0 +1,451 @@
+// =============================================================================
+// Module: Website CMS — Headless content management for hotel websites
+// =============================================================================
+
+enum CmsContentStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum CmsMediaType {
+  IMAGE
+  VIDEO
+  PDF
+  DOCUMENT
+  AUDIO
+}
+
+enum CmsFormType {
+  CONTACT
+  CORPORATE_INQUIRY
+  RESTAURANT_BOOKING
+  EVENT_INQUIRY
+  GENERAL_INQUIRY
+  NEWSLETTER
+}
+
+model CmsPage {
+  id          String           @id @default(uuid()) @db.Uuid
+  hotelId     String           @map("hotel_id") @db.Uuid
+  slug        String           @db.VarChar(200)
+  title       String           @db.VarChar(500)
+  pageType    String           @map("page_type") @db.VarChar(100)
+  status      CmsContentStatus @default(DRAFT)
+  content     Json             @default("{}")
+  sortOrder   Int              @default(0) @map("sort_order")
+  isEnabled   Boolean          @default(true) @map("is_enabled")
+  publishedAt DateTime?        @map("published_at") @db.Timestamptz
+  scheduledAt DateTime?        @map("scheduled_at") @db.Timestamptz
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz
+  createdBy   String?          @map("created_by") @db.Uuid
+  updatedBy   String?          @map("updated_by") @db.Uuid
+  version     Int              @default(1)
+
+  hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  seo         CmsSeo?
+  revisions   CmsRevision[]
+  sections    CmsSection[]
+
+  @@unique([hotelId, slug])
+  @@index([hotelId, status])
+  @@index([hotelId, pageType])
+  @@map("cms_pages")
+}
+
+model CmsSection {
+  id          String           @id @default(uuid()) @db.Uuid
+  hotelId     String           @map("hotel_id") @db.Uuid
+  pageId      String?          @map("page_id") @db.Uuid
+  sectionKey  String           @map("section_key") @db.VarChar(100)
+  title       String?          @db.VarChar(500)
+  content     Json             @default("{}")
+  sortOrder   Int              @default(0) @map("sort_order")
+  isEnabled   Boolean          @default(true) @map("is_enabled")
+  status      CmsContentStatus @default(DRAFT)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz
+  version     Int              @default(1)
+
+  hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  page        CmsPage?         @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, sectionKey])
+  @@index([pageId])
+  @@map("cms_sections")
+}
+
+model CmsHeroSlide {
+  id              String           @id @default(uuid()) @db.Uuid
+  hotelId         String           @map("hotel_id") @db.Uuid
+  title           String           @db.VarChar(500)
+  subtitle        String?          @db.VarChar(1000)
+  desktopImageUrl String?          @map("desktop_image_url") @db.VarChar(1000)
+  tabletImageUrl  String?          @map("tablet_image_url") @db.VarChar(1000)
+  mobileImageUrl  String?          @map("mobile_image_url") @db.VarChar(1000)
+  videoUrl        String?          @map("video_url") @db.VarChar(1000)
+  overlayColor    String?          @map("overlay_color") @db.VarChar(20)
+  overlayOpacity  Float?           @map("overlay_opacity")
+  buttonText      String?          @map("button_text") @db.VarChar(200)
+  buttonLink      String?          @map("button_link") @db.VarChar(500)
+  animation       String?          @db.VarChar(100)
+  sortOrder       Int              @default(0) @map("sort_order")
+  status          CmsContentStatus @default(DRAFT)
+  startDate       DateTime?        @map("start_date") @db.Timestamptz
+  endDate         DateTime?        @map("end_date") @db.Timestamptz
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz
+  version         Int              @default(1)
+
+  hotel           Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status, sortOrder])
+  @@map("cms_hero_slides")
+}
+
+model CmsWebsiteRoom {
+  id              String           @id @default(uuid()) @db.Uuid
+  hotelId         String           @map("hotel_id") @db.Uuid
+  roomTypeId      String?          @map("room_type_id") @db.Uuid
+  name            String           @db.VarChar(300)
+  slug            String           @db.VarChar(200)
+  description     String?          @db.Text
+  shortDescription String?         @map("short_description") @db.VarChar(500)
+  images          Json             @default("[]")
+  images360       Json             @default("[]") @map("images_360")
+  amenities       Json             @default("[]")
+  maxGuests       Int?             @map("max_guests")
+  price           Decimal?         @db.Decimal(12, 2)
+  weekendPrice    Decimal?         @map("weekend_price") @db.Decimal(12, 2)
+  peakPrice       Decimal?         @map("peak_price") @db.Decimal(12, 2)
+  roomSize        String?          @map("room_size") @db.VarChar(50)
+  bedType         String?          @map("bed_type") @db.VarChar(100)
+  floor           String?          @db.VarChar(50)
+  virtualTourUrl  String?          @map("virtual_tour_url") @db.VarChar(1000)
+  isFeatured      Boolean          @default(false) @map("is_featured")
+  status          CmsContentStatus @default(DRAFT)
+  sortOrder       Int              @default(0) @map("sort_order")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz
+  version         Int              @default(1)
+
+  hotel           Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  roomType        RoomType?        @relation(fields: [roomTypeId], references: [id], onDelete: SetNull)
+  seo             CmsSeo?
+
+  @@unique([hotelId, slug])
+  @@index([hotelId, roomTypeId])
+  @@index([hotelId, status, isFeatured])
+  @@map("cms_website_rooms")
+}
+
+model CmsOffer {
+  id          String           @id @default(uuid()) @db.Uuid
+  hotelId     String           @map("hotel_id") @db.Uuid
+  title       String           @db.VarChar(500)
+  slug        String           @db.VarChar(200)
+  description String?          @db.Text
+  offerType   String           @map("offer_type") @db.VarChar(100)
+  discount    Decimal?         @db.Decimal(8, 2)
+  couponCode  String?          @map("coupon_code") @db.VarChar(50)
+  imageUrl    String?          @map("image_url") @db.VarChar(1000)
+  priceLabel  String?          @map("price_label") @db.VarChar(100)
+  startDate   DateTime?        @map("start_date") @db.Timestamptz
+  endDate     DateTime?        @map("end_date") @db.Timestamptz
+  status      CmsContentStatus @default(DRAFT)
+  sortOrder   Int              @default(0) @map("sort_order")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz
+  version     Int              @default(1)
+
+  hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  seo         CmsSeo?
+
+  @@unique([hotelId, slug])
+  @@index([hotelId, status, offerType])
+  @@map("cms_offers")
+}
+
+model CmsGalleryItem {
+  id          String           @id @default(uuid()) @db.Uuid
+  hotelId     String           @map("hotel_id") @db.Uuid
+  albumId     String?          @map("album_id") @db.Uuid
+  title       String?          @db.VarChar(500)
+  mediaType   CmsMediaType     @default(IMAGE) @map("media_type")
+  url         String           @db.VarChar(1000)
+  thumbnailUrl String?         @map("thumbnail_url") @db.VarChar(1000)
+  altText     String?          @map("alt_text") @db.VarChar(500)
+  category    String?          @db.VarChar(100)
+  sortOrder   Int              @default(0) @map("sort_order")
+  status      CmsContentStatus @default(PUBLISHED)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz
+
+  hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  album       CmsMediaAlbum?   @relation(fields: [albumId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, albumId, category])
+  @@map("cms_gallery_items")
+}
+
+model CmsTestimonial {
+  id        String           @id @default(uuid()) @db.Uuid
+  hotelId   String           @map("hotel_id") @db.Uuid
+  guestName String           @map("guest_name") @db.VarChar(200)
+  photoUrl  String?          @map("photo_url") @db.VarChar(1000)
+  review    String           @db.Text
+  country   String?          @db.VarChar(100)
+  rating    Int              @default(5) @db.SmallInt
+  stayDate  DateTime?        @map("stay_date") @db.Date
+  roomName  String?          @map("room_name") @db.VarChar(200)
+  isFeatured Boolean         @default(false) @map("is_featured")
+  status    CmsContentStatus @default(DRAFT)
+  sortOrder Int              @default(0) @map("sort_order")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?        @map("deleted_at") @db.Timestamptz
+
+  hotel     Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status, isFeatured])
+  @@map("cms_testimonials")
+}
+
+model CmsMediaFolder {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  parentId  String?  @map("parent_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  parent    CmsMediaFolder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  CmsMediaFolder[] @relation("FolderTree")
+  files     CmsMediaFile[]
+
+  @@index([hotelId, parentId])
+  @@map("cms_media_folders")
+}
+
+model CmsMediaAlbum {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  items     CmsGalleryItem[]
+
+  @@index([hotelId])
+  @@map("cms_media_albums")
+}
+
+model CmsMediaFile {
+  id           String       @id @default(uuid()) @db.Uuid
+  hotelId      String       @map("hotel_id") @db.Uuid
+  folderId     String?      @map("folder_id") @db.Uuid
+  fileName     String       @map("file_name") @db.VarChar(500)
+  originalName String       @map("original_name") @db.VarChar(500)
+  mediaType    CmsMediaType @map("media_type")
+  mimeType     String       @map("mime_type") @db.VarChar(100)
+  url          String       @db.VarChar(1000)
+  thumbnailUrl String?      @map("thumbnail_url") @db.VarChar(1000)
+  sizeBytes    BigInt       @map("size_bytes")
+  width        Int?
+  height       Int?
+  altText      String?      @map("alt_text") @db.VarChar(500)
+  metadata     Json         @default("{}")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime?    @map("deleted_at") @db.Timestamptz
+  uploadedBy   String?      @map("uploaded_by") @db.Uuid
+
+  hotel        Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  folder       CmsMediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, folderId, mediaType])
+  @@map("cms_media_files")
+}
+
+model CmsSeo {
+  id              String   @id @default(uuid()) @db.Uuid
+  hotelId         String   @map("hotel_id") @db.Uuid
+  pageId          String?  @unique @map("page_id") @db.Uuid
+  roomId          String?  @unique @map("room_id") @db.Uuid
+  offerId         String?  @unique @map("offer_id") @db.Uuid
+  metaTitle       String?  @map("meta_title") @db.VarChar(200)
+  metaDescription String?  @map("meta_description") @db.VarChar(500)
+  metaKeywords    String[] @default([]) @map("meta_keywords")
+  ogTitle         String?  @map("og_title") @db.VarChar(200)
+  ogDescription   String?  @map("og_description") @db.VarChar(500)
+  ogImage         String?  @map("og_image") @db.VarChar(1000)
+  twitterCard     String?  @map("twitter_card") @db.VarChar(50)
+  canonicalUrl    String?  @map("canonical_url") @db.VarChar(1000)
+  schemaJson      Json?    @map("schema_json")
+  robots          String?  @db.VarChar(100)
+  slug            String?  @db.VarChar(200)
+  redirectUrl     String?  @map("redirect_url") @db.VarChar(1000)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel           Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  page            CmsPage? @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  room            CmsWebsiteRoom? @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  offer           CmsOffer? @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("cms_seo")
+}
+
+model CmsMenu {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  menuKey   String   @map("menu_key") @db.VarChar(100)
+  label     String   @db.VarChar(200)
+  items     Json     @default("[]")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, menuKey])
+  @@map("cms_menus")
+}
+
+model CmsForm {
+  id          String     @id @default(uuid()) @db.Uuid
+  hotelId     String     @map("hotel_id") @db.Uuid
+  name        String     @db.VarChar(200)
+  formType    CmsFormType @map("form_type")
+  fields      Json       @default("[]")
+  settings    Json       @default("{}")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel       Hotel      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  submissions CmsFormSubmission[]
+
+  @@index([hotelId, formType])
+  @@map("cms_forms")
+}
+
+model CmsFormSubmission {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  formId    String   @map("form_id") @db.Uuid
+  data      Json     @default("{}")
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  form      CmsForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, formId])
+  @@map("cms_form_submissions")
+}
+
+model CmsNewsletterSubscriber {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  email     String   @db.VarChar(255)
+  name      String?  @db.VarChar(200)
+  isActive  Boolean  @default(true) @map("is_active")
+  source    String?  @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, email])
+  @@index([hotelId, isActive])
+  @@map("cms_newsletter_subscribers")
+}
+
+model CmsBlogPost {
+  id           String           @id @default(uuid()) @db.Uuid
+  hotelId      String           @map("hotel_id") @db.Uuid
+  title        String           @db.VarChar(500)
+  slug         String           @db.VarChar(200)
+  excerpt      String?          @db.VarChar(1000)
+  content      String           @db.Text
+  featuredImage String?         @map("featured_image") @db.VarChar(1000)
+  authorId     String?          @map("author_id") @db.Uuid
+  categoryId   String?          @map("category_id") @db.Uuid
+  tags         String[]         @default([])
+  status       CmsContentStatus @default(DRAFT)
+  publishedAt  DateTime?        @map("published_at") @db.Timestamptz
+  scheduledAt  DateTime?        @map("scheduled_at") @db.Timestamptz
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime?        @map("deleted_at") @db.Timestamptz
+  version      Int              @default(1)
+
+  hotel        Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  category     CmsBlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([hotelId, slug])
+  @@index([hotelId, status])
+  @@map("cms_blog_posts")
+}
+
+model CmsBlogCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  slug      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  posts     CmsBlogPost[]
+
+  @@unique([hotelId, slug])
+  @@map("cms_blog_categories")
+}
+
+model CmsRevision {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  pageId    String   @map("page_id") @db.Uuid
+  version   Int
+  content   Json     @default("{}")
+  status    CmsContentStatus
+  createdBy String?  @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  page      CmsPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, version])
+  @@map("cms_revisions")
+}
+
+model CmsWebsiteSettings {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @unique @map("hotel_id") @db.Uuid
+  settings    Json     @default("{}")
+  footer      Json     @default("{}")
+  contact     Json     @default("{}")
+  social      Json     @default("{}")
+  branding    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("cms_website_settings")
+}

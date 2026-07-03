@@ -1,0 +1,24 @@
+/**
+ * Infrastructure layer — external system adapters.
+ *
+ * Structure:
+ * - database/
+ *     prisma.service.ts       Prisma client wrapper
+ *     prisma.module.ts        Global database module
+ *     repositories/           Base repository pattern
+ * - cache/
+ *     redis.service.ts        Redis client wrapper
+ *     redis.module.ts
+ *     cache.interceptor.ts
+ * - storage/
+ *     s3.service.ts           AWS S3 upload/download
+ *     storage.module.ts
+ * - messaging/
+ *     socket.gateway.ts       Socket.io gateway
+ *     socket.module.ts
+ *     notification.service.ts SMTP, WhatsApp, SMS
+ * - external/
+ *     razorpay.service.ts
+ *     stripe.service.ts
+ *     google-oauth.service.ts
+ */

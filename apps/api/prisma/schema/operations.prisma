@@ -1,0 +1,181 @@
+// =============================================================================
+// Modules 17-21: Housekeeping, Maintenance, Laundry
+// =============================================================================
+
+model HousekeepingTask {
+  id              String             @id @default(uuid()) @db.Uuid
+  hotelId         String             @map("hotel_id") @db.Uuid
+  roomId          String             @map("room_id") @db.Uuid
+  assignedStaffId String?            @map("assigned_staff_id") @db.Uuid
+  status          HousekeepingStatus @default(PENDING)
+  taskType        String             @default("cleaning") @map("task_type") @db.VarChar(50)
+  priority        MaintenancePriority @default(MEDIUM)
+  scheduledAt     DateTime?          @map("scheduled_at") @db.Timestamptz
+  startedAt       DateTime?          @map("started_at") @db.Timestamptz
+  completedAt     DateTime?          @map("completed_at") @db.Timestamptz
+  notes           String?            @db.Text
+  estimatedMinutes Int?              @map("estimated_minutes")
+  supervisorId    String?            @map("supervisor_id") @db.Uuid
+  cleaningScore   Int?               @map("cleaning_score") @db.SmallInt
+  photos          Json?
+  inspectionRemarks String?          @map("inspection_remarks") @db.Text
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy       String?            @map("created_by") @db.Uuid
+  updatedBy       String?            @map("updated_by") @db.Uuid
+  deletedBy       String?            @map("deleted_by") @db.Uuid
+  isActive        Boolean            @default(true) @map("is_active")
+  version         Int                @default(1)
+
+  room           Room                    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  assignedStaff  Staff?                  @relation("AssignedHousekeeper", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  checklistItems CleaningChecklistItem[]
+
+  @@index([hotelId, status])
+  @@index([hotelId, roomId])
+  @@index([hotelId, assignedStaffId])
+  @@map("housekeeping_tasks")
+}
+
+model CleaningChecklist {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  roomType  String?  @map("room_type") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  items CleaningChecklistItem[]
+
+  @@index([hotelId])
+  @@map("cleaning_checklists")
+}
+
+model CleaningChecklistItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  checklistId String   @map("checklist_id") @db.Uuid
+  taskId      String?  @map("task_id") @db.Uuid
+  itemName    String   @map("item_name") @db.VarChar(255)
+  isCompleted Boolean  @default(false) @map("is_completed")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  checklist CleaningChecklist  @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  task      HousekeepingTask?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, checklistId])
+  @@index([hotelId, taskId])
+  @@map("cleaning_checklist_items")
+}
+
+model LaundryOrder {
+  id          String       @id @default(uuid()) @db.Uuid
+  hotelId     String       @map("hotel_id") @db.Uuid
+  roomId      String?      @map("room_id") @db.Uuid
+  guestId     String?      @map("guest_id") @db.Uuid
+  orderNumber String       @map("order_number") @db.VarChar(30)
+  status      LaundryStatus @default(COLLECTED)
+  totalAmount Decimal      @default(0) @map("total_amount") @db.Decimal(12, 2)
+  notes       String?      @db.Text
+  collectedAt DateTime?    @map("collected_at") @db.Timestamptz
+  deliveredAt DateTime?    @map("delivered_at") @db.Timestamptz
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz
+  createdBy   String?      @map("created_by") @db.Uuid
+  updatedBy   String?      @map("updated_by") @db.Uuid
+  deletedBy   String?      @map("deleted_by") @db.Uuid
+  isActive    Boolean      @default(true) @map("is_active")
+  version     Int          @default(1)
+
+  room  Room?        @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  items LaundryItem[]
+
+  @@unique([hotelId, orderNumber])
+  @@index([hotelId, status])
+  @@map("laundry_orders")
+}
+
+model LaundryItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  orderId      String   @map("order_id") @db.Uuid
+  itemName     String   @map("item_name") @db.VarChar(100)
+  quantity     Int      @default(1)
+  rate         Decimal  @default(0) @db.Decimal(10, 2)
+  amount       Decimal  @default(0) @db.Decimal(12, 2)
+  serviceType  String?  @map("service_type") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy    String?  @map("created_by") @db.Uuid
+  updatedBy    String?  @map("updated_by") @db.Uuid
+  deletedBy    String?  @map("deleted_by") @db.Uuid
+  isActive     Boolean  @default(true) @map("is_active")
+  version      Int      @default(1)
+
+  order LaundryOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, orderId])
+  @@map("laundry_items")
+}
+
+model MaintenanceRequest {
+  id              String                   @id @default(uuid()) @db.Uuid
+  hotelId         String                   @map("hotel_id") @db.Uuid
+  requestNumber   String                   @map("request_number") @db.VarChar(30)
+  roomId          String?                  @map("room_id") @db.Uuid
+  assetId         String?                  @map("asset_id") @db.Uuid
+  assignedStaffId String?                  @map("assigned_staff_id") @db.Uuid
+  title           String                   @db.VarChar(255)
+  description     String?                  @db.Text
+  category        String?                  @db.VarChar(100)
+  source          MaintenanceRequestSource @default(MAINTENANCE_TEAM)
+  issueCategory   CorrectiveType?          @map("issue_category")
+  priority        MaintenancePriority      @default(MEDIUM)
+  status          MaintenanceStatus        @default(OPEN)
+  location        String?                  @db.VarChar(255)
+  photos          Json?
+  videoUrl        String?                  @map("video_url") @db.VarChar(500)
+  remarks         String?                  @db.Text
+  slaDueAt        DateTime?                @map("sla_due_at") @db.Timestamptz
+  reviewedBy      String?                  @map("reviewed_by") @db.Uuid
+  reviewedAt      DateTime?                @map("reviewed_at") @db.Timestamptz
+  reportedAt      DateTime                 @default(now()) @map("reported_at") @db.Timestamptz
+  resolvedAt      DateTime?                @map("resolved_at") @db.Timestamptz
+  resolutionNotes String?                  @map("resolution_notes") @db.Text
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?                @map("deleted_at") @db.Timestamptz
+  createdBy       String?                  @map("created_by") @db.Uuid
+  updatedBy       String?                  @map("updated_by") @db.Uuid
+  deletedBy       String?                  @map("deleted_by") @db.Uuid
+  isActive        Boolean                  @default(true) @map("is_active")
+  version         Int                      @default(1)
+
+  room           Room?        @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  asset          Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  assignedStaff  Staff?       @relation("AssignedMaintainer", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  workOrders     WorkOrder[]
+
+  @@unique([hotelId, requestNumber])
+  @@index([hotelId, status])
+  @@index([hotelId, priority])
+  @@index([hotelId, roomId])
+  @@map("maintenance_requests")
+}

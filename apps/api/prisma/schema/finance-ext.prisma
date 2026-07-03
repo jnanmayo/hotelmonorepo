@@ -1,0 +1,296 @@
+// =============================================================================
+// Enterprise Finance & Accounting — TungaOS Extensions
+// =============================================================================
+
+enum AccountSubType {
+  CURRENT_ASSET
+  FIXED_ASSET
+  CURRENT_LIABILITY
+  LONG_TERM_LIABILITY
+  EQUITY
+  OPERATING_REVENUE
+  OTHER_INCOME
+  OPERATING_EXPENSE
+  COST_OF_GOODS
+  DEPRECIATION
+  TAX
+}
+
+enum FinVoucherType {
+  JOURNAL
+  PAYMENT
+  RECEIPT
+  EXPENSE
+  CREDIT_NOTE
+  DEBIT_NOTE
+  CONTRA
+  OPENING
+  CLOSING
+}
+
+enum FinApprovalStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  POSTED
+}
+
+enum FinReceivableType {
+  GUEST
+  CORPORATE
+  TRAVEL_AGENT
+  OTA
+  OTHER
+}
+
+enum FinPayableType {
+  VENDOR
+  UTILITY
+  SALARY
+  TAX
+  OTHER
+}
+
+enum FinBankAccountType {
+  CURRENT
+  SAVINGS
+  CASH
+  PETTY_CASH
+  UPI_WALLET
+}
+
+enum FinCashTransactionType {
+  COLLECTION
+  DEPOSIT
+  WITHDRAWAL
+  PETTY_CASH
+  RECONCILIATION
+}
+
+enum FinGstType {
+  CGST
+  SGST
+  IGST
+  CESS
+  REVERSE_CHARGE
+}
+
+model CostCenter {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  code        String   @db.VarChar(30)
+  name        String   @db.VarChar(100)
+  department  String?  @db.VarChar(100)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel        Hotel          @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  accounts     Account[]
+  journalEntries JournalEntry[]
+  expenses     Expense[]
+  budgets      FinBudget[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId])
+  @@map("cost_centers")
+}
+
+model FinancialYear {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  name      String   @db.VarChar(50)
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+  isClosed  Boolean  @default(false) @map("is_closed")
+  isCurrent Boolean  @default(false) @map("is_current")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  journalEntries JournalEntry[]
+
+  @@unique([hotelId, name])
+  @@index([hotelId, isCurrent])
+  @@map("financial_years")
+}
+
+model FinBankAccount {
+  id            String             @id @default(uuid()) @db.Uuid
+  hotelId       String             @map("hotel_id") @db.Uuid
+  accountId     String?            @map("account_id") @db.Uuid
+  name          String             @db.VarChar(255)
+  bankName      String?            @map("bank_name") @db.VarChar(255)
+  accountNumber String?            @map("account_number") @db.VarChar(50)
+  ifscCode      String?            @map("ifsc_code") @db.VarChar(20)
+  type          FinBankAccountType @default(CURRENT)
+  currency      String             @default("INR") @db.VarChar(3)
+  openingBalance Decimal           @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  currentBalance Decimal           @default(0) @map("current_balance") @db.Decimal(14, 2)
+  isActive      Boolean            @default(true) @map("is_active")
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel          Hotel                 @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  glAccount      Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  transactions   FinBankTransaction[]
+  reconciliations FinBankReconciliation[]
+
+  @@index([hotelId])
+  @@map("fin_bank_accounts")
+}
+
+model FinBankTransaction {
+  id              String   @id @default(uuid()) @db.Uuid
+  hotelId         String   @map("hotel_id") @db.Uuid
+  bankAccountId   String   @map("bank_account_id") @db.Uuid
+  transactionDate DateTime @map("transaction_date") @db.Date
+  description     String?  @db.VarChar(500)
+  debit           Decimal  @default(0) @db.Decimal(14, 2)
+  credit          Decimal  @default(0) @db.Decimal(14, 2)
+  balance         Decimal  @default(0) @db.Decimal(14, 2)
+  reference       String?  @db.VarChar(100)
+  isReconciled    Boolean  @default(false) @map("is_reconciled")
+  journalEntryId  String?  @map("journal_entry_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  bankAccount  FinBankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry?  @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, bankAccountId, transactionDate(sort: Desc)])
+  @@map("fin_bank_transactions")
+}
+
+model FinBankReconciliation {
+  id            String   @id @default(uuid()) @db.Uuid
+  hotelId       String   @map("hotel_id") @db.Uuid
+  bankAccountId String   @map("bank_account_id") @db.Uuid
+  statementDate DateTime @map("statement_date") @db.Date
+  bookBalance   Decimal  @map("book_balance") @db.Decimal(14, 2)
+  bankBalance   Decimal  @map("bank_balance") @db.Decimal(14, 2)
+  difference    Decimal  @default(0) @db.Decimal(14, 2)
+  status        String   @default("PENDING") @db.VarChar(30)
+  notes         String?  @db.Text
+  reconciledAt  DateTime? @map("reconciled_at") @db.Timestamptz
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  bankAccount FinBankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, bankAccountId])
+  @@map("fin_bank_reconciliations")
+}
+
+model FinCashTransaction {
+  id              String                 @id @default(uuid()) @db.Uuid
+  hotelId         String                 @map("hotel_id") @db.Uuid
+  type            FinCashTransactionType
+  amount          Decimal                @db.Decimal(14, 2)
+  description     String?                @db.VarChar(500)
+  counterName     String?                @map("counter_name") @db.VarChar(100)
+  transactionDate DateTime               @default(now()) @map("transaction_date") @db.Timestamptz
+  journalEntryId  String?                @map("journal_entry_id") @db.Uuid
+  createdBy       String?                @map("created_by") @db.Uuid
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz
+
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, transactionDate(sort: Desc)])
+  @@map("fin_cash_transactions")
+}
+
+model FinBudget {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  costCenterId String?  @map("cost_center_id") @db.Uuid
+  fiscalYear   Int      @map("fiscal_year")
+  name         String   @db.VarChar(255)
+  budgetAmount Decimal  @map("budget_amount") @db.Decimal(14, 2)
+  spentAmount  Decimal  @default(0) @map("spent_amount") @db.Decimal(14, 2)
+  category     String?  @db.VarChar(100)
+  status       FinApprovalStatus @default(DRAFT)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel      Hotel       @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  costCenter CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, fiscalYear])
+  @@map("fin_budgets")
+}
+
+model FinReceivable {
+  id            String            @id @default(uuid()) @db.Uuid
+  hotelId       String            @map("hotel_id") @db.Uuid
+  type          FinReceivableType @default(GUEST)
+  partyName     String            @map("party_name") @db.VarChar(255)
+  partyRef      String?           @map("party_ref") @db.Uuid
+  invoiceRef    String?           @map("invoice_ref") @db.VarChar(100)
+  amount        Decimal           @db.Decimal(14, 2)
+  paidAmount    Decimal           @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  dueDate       DateTime?         @map("due_date") @db.Date
+  status        String            @default("OPEN") @db.VarChar(30)
+  sourceModule  String?           @map("source_module") @db.VarChar(50)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([hotelId, status])
+  @@index([hotelId, dueDate])
+  @@map("fin_receivables")
+}
+
+model FinPayable {
+  id           String         @id @default(uuid()) @db.Uuid
+  hotelId      String         @map("hotel_id") @db.Uuid
+  type         FinPayableType @default(VENDOR)
+  partyName    String         @map("party_name") @db.VarChar(255)
+  partyRef     String?        @map("party_ref") @db.Uuid
+  billRef      String?        @map("bill_ref") @db.VarChar(100)
+  amount       Decimal        @db.Decimal(14, 2)
+  paidAmount   Decimal        @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  dueDate      DateTime?      @map("due_date") @db.Date
+  paymentTerms String?        @map("payment_terms") @db.VarChar(50)
+  status       String         @default("OPEN") @db.VarChar(30)
+  sourceModule String?        @map("source_module") @db.VarChar(50)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([hotelId, status])
+  @@index([hotelId, dueDate])
+  @@map("fin_payables")
+}
+
+model FinGstEntry {
+  id            String     @id @default(uuid()) @db.Uuid
+  hotelId       String     @map("hotel_id") @db.Uuid
+  gstType       FinGstType @map("gst_type")
+  hsnSac        String?    @map("hsn_sac") @db.VarChar(20)
+  taxableAmount Decimal    @map("taxable_amount") @db.Decimal(14, 2)
+  gstAmount     Decimal    @map("gst_amount") @db.Decimal(14, 2)
+  gstRate       Decimal    @default(0) @map("gst_rate") @db.Decimal(5, 2)
+  periodMonth   Int        @map("period_month")
+  periodYear    Int        @map("period_year")
+  reference     String?    @db.VarChar(100)
+  sourceModule  String?    @map("source_module") @db.VarChar(50)
+  sourceId      String?    @map("source_id") @db.Uuid
+  isOutput      Boolean    @default(true) @map("is_output")
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, periodYear, periodMonth])
+  @@map("fin_gst_entries")
+}
+
+model FinApproval {
+  id           String            @id @default(uuid()) @db.Uuid
+  hotelId      String            @map("hotel_id") @db.Uuid
+  entityType   String            @map("entity_type") @db.VarChar(50)
+  entityId     String            @map("entity_id") @db.Uuid
+  level        Int               @default(1)
+  status       FinApprovalStatus @default(PENDING)
+  approvedBy   String?           @map("approved_by") @db.Uuid
+  approvedAt   DateTime?         @map("approved_at") @db.Timestamptz
+  remarks      String?           @db.Text
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, entityType, entityId])
+  @@map("fin_approvals")
+}

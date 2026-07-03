@@ -1,0 +1,16 @@
+{
+  "extends": "@tungaos/typescript-config/nestjs.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/common/*": ["./src/common/*"],
+      "@/config/*": ["./src/config/*"],
+      "@/infrastructure/*": ["./src/infrastructure/*"],
+      "@/modules/*": ["./src/modules/*"]
+    }
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

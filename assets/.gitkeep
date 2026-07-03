@@ -1,0 +1,10 @@
+/**
+ * Static brand assets, logos, and design tokens.
+ * Tenant-specific assets are stored in S3 and referenced by URL.
+ *
+ * Structure:
+ * - brand/           TungaOS platform branding
+ * - icons/           App icons and favicons
+ * - images/          Placeholder and default images
+ * - fonts/           Self-hosted font files (optional)
+ */

@@ -1,0 +1,241 @@
+// =============================================================================
+// Modules 74-81: Integrations, AI, Reports, Dashboard Cache
+// =============================================================================
+
+model OtaIntegration {
+  id                 String               @id @default(uuid()) @db.Uuid
+  hotelId            String               @map("hotel_id") @db.Uuid
+  provider           String               @db.VarChar(50)
+  apiKeyEncrypted    String?              @map("api_key_encrypted") @db.Text
+  apiSecretEncrypted String?              @map("api_secret_encrypted") @db.Text
+  webhookSecretEncrypted String?          @map("webhook_secret_encrypted") @db.Text
+  hotelCode          String?              @map("hotel_code") @db.VarChar(100)
+  webhookUrl         String?              @map("webhook_url") @db.VarChar(1000)
+  commissionPct      Decimal              @default(0) @map("commission_pct") @db.Decimal(8, 4)
+  defaultRatePlanId  String?              @map("default_rate_plan_id") @db.Uuid
+  environment        ChannelEnvironment   @default(SANDBOX)
+  status             OtaIntegrationStatus @default(INACTIVE)
+  lastSyncAt         DateTime?            @map("last_sync_at") @db.Timestamptz
+  syncError          String?              @map("sync_error") @db.Text
+  config             Json?
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime?            @map("deleted_at") @db.Timestamptz
+  createdBy          String?              @map("created_by") @db.Uuid
+  updatedBy          String?              @map("updated_by") @db.Uuid
+  deletedBy          String?              @map("deleted_by") @db.Uuid
+  isActive           Boolean              @default(true) @map("is_active")
+  version            Int                  @default(1)
+
+  hotel              Hotel                    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  channelMappings    ChannelMapping[]
+  ratePlanMappings   ChannelRatePlanMapping[]
+  restrictions       ChannelRestriction[]
+  syncLogs           ChannelSyncLog[]
+  webhookEvents      ChannelWebhookEvent[]
+  commissionLogs     ChannelCommissionLog[]
+  syncJobs           ChannelSyncJob[]
+
+  @@unique([hotelId, provider])
+  @@index([hotelId, status])
+  @@map("ota_integrations")
+}
+
+model ChannelMapping {
+  id              String            @id @default(uuid()) @db.Uuid
+  hotelId         String            @map("hotel_id") @db.Uuid
+  integrationId   String            @map("integration_id") @db.Uuid
+  roomTypeId      String            @map("room_type_id") @db.Uuid
+  externalRoomCode String           @map("external_room_code") @db.VarChar(100)
+  externalRatePlan String?          @map("external_rate_plan") @db.VarChar(100)
+  syncStatus      ChannelSyncStatus @default(PENDING) @map("sync_status")
+  lastSyncAt      DateTime?         @map("last_sync_at") @db.Timestamptz
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
+  createdBy       String?           @map("created_by") @db.Uuid
+  updatedBy       String?           @map("updated_by") @db.Uuid
+  deletedBy       String?           @map("deleted_by") @db.Uuid
+  isActive        Boolean           @default(true) @map("is_active")
+  version         Int               @default(1)
+
+  integration OtaIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  roomType    RoomType       @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, integrationId, externalRoomCode])
+  @@index([hotelId, roomTypeId])
+  @@map("channel_mappings")
+}
+
+model DynamicPriceRule {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  roomTypeId  String?  @map("room_type_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  minOccupancy Int?    @map("min_occupancy") @db.SmallInt
+  maxOccupancy Int?    @map("max_occupancy") @db.SmallInt
+  dayOfWeek   Int?     @map("day_of_week") @db.SmallInt
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  adjustmentPct Decimal @map("adjustment_pct") @db.Decimal(8, 4)
+  fixedRate   Decimal? @map("fixed_rate") @db.Decimal(12, 2)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  roomType RoomType? @relation(fields: [roomTypeId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId, roomTypeId])
+  @@index([hotelId, priority])
+  @@map("dynamic_price_rules")
+}
+
+model AiPrediction {
+  id          String           @id @default(uuid()) @db.Uuid
+  hotelId     String           @map("hotel_id") @db.Uuid
+  type        AiPredictionType
+  modelVersion String?          @map("model_version") @db.VarChar(50)
+  targetDate  DateTime?        @map("target_date") @db.Date
+  predictedValue Decimal?       @map("predicted_value") @db.Decimal(14, 4)
+  confidence  Decimal?         @db.Decimal(5, 4)
+  inputData   Json?            @map("input_data")
+  outputData  Json?            @map("output_data")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz
+  createdBy   String?          @map("created_by") @db.Uuid
+  updatedBy   String?          @map("updated_by") @db.Uuid
+  deletedBy   String?          @map("deleted_by") @db.Uuid
+  isActive    Boolean          @default(true) @map("is_active")
+  version     Int              @default(1)
+
+  @@index([hotelId, type, targetDate])
+  @@map("ai_predictions")
+}
+
+model AiRevenueForecast {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  forecastDate DateTime @map("forecast_date") @db.Date
+  period      String   @db.VarChar(20)
+  roomRevenue Decimal  @default(0) @map("room_revenue") @db.Decimal(14, 2)
+  fnbRevenue  Decimal  @default(0) @map("fnb_revenue") @db.Decimal(14, 2)
+  otherRevenue Decimal @default(0) @map("other_revenue") @db.Decimal(14, 2)
+  totalRevenue Decimal @default(0) @map("total_revenue") @db.Decimal(14, 2)
+  occupancyPct Decimal @default(0) @map("occupancy_pct") @db.Decimal(5, 2)
+  adr         Decimal  @default(0) @db.Decimal(12, 2)
+  revpar      Decimal  @default(0) @db.Decimal(12, 2)
+  modelVersion String? @map("model_version") @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  @@unique([hotelId, forecastDate, period])
+  @@index([hotelId, forecastDate])
+  @@map("ai_revenue_forecasts")
+}
+
+model AiRecommendationLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String   @map("hotel_id") @db.Uuid
+  context     String   @db.VarChar(100)
+  entityType  String?  @map("entity_type") @db.VarChar(50)
+  entityId    String?  @map("entity_id") @db.Uuid
+  recommendation Json
+  wasAccepted Boolean  @default(false) @map("was_accepted")
+  modelVersion String? @map("model_version") @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  @@index([hotelId, context])
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("ai_recommendation_logs")
+}
+
+model ReportDefinition {
+  id          String   @id @default(uuid()) @db.Uuid
+  hotelId     String?  @map("hotel_id") @db.Uuid
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(255)
+  module      String   @db.VarChar(50)
+  description String?  @db.Text
+  queryTemplate String? @map("query_template") @db.Text
+  parameters  Json?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy   String?  @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  deletedBy   String?  @map("deleted_by") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  version     Int      @default(1)
+
+  runs ReportRun[]
+
+  @@unique([hotelId, code])
+  @@map("report_definitions")
+}
+
+model ReportRun {
+  id          String       @id @default(uuid()) @db.Uuid
+  hotelId     String       @map("hotel_id") @db.Uuid
+  definitionId String      @map("definition_id") @db.Uuid
+  status      ReportStatus @default(PENDING)
+  parameters  Json?
+  resultUrl   String?      @map("result_url") @db.VarChar(1000)
+  errorMessage String?     @map("error_message") @db.Text
+  startedAt   DateTime?    @map("started_at") @db.Timestamptz
+  completedAt DateTime?    @map("completed_at") @db.Timestamptz
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz
+  createdBy   String?      @map("created_by") @db.Uuid
+  updatedBy   String?      @map("updated_by") @db.Uuid
+  deletedBy   String?      @map("deleted_by") @db.Uuid
+  isActive    Boolean      @default(true) @map("is_active")
+  version     Int          @default(1)
+
+  definition ReportDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("report_runs")
+}
+
+model DashboardCache {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  cacheKey  String   @map("cache_key") @db.VarChar(255)
+  data      Json
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+  deletedBy String?  @map("deleted_by") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+
+  @@unique([hotelId, cacheKey])
+  @@index([hotelId, expiresAt])
+  @@map("dashboard_cache")
+}

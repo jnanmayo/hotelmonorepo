@@ -1,0 +1,7 @@
+/**
+ * Data table components built on TanStack Table + Shadcn.
+ *
+ * - data-table/       Generic sortable/filterable table
+ * - table-toolbar/    Search, filters, column visibility
+ * - table-pagination/ Server-side pagination controls
+ */

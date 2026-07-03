@@ -1,0 +1,13 @@
+/**
+ * Business-agnostic reusable components.
+ *
+ * Structure:
+ * - buttons/     Extended button variants (PrimaryButton, IconButton)
+ * - cards/       StatCard, InfoCard, ImageCard
+ * - filters/     SearchFilter, DateRangeFilter, StatusFilter
+ * - pagination/  PaginationBar, PageSizeSelector
+ * - search/      SearchInput, SearchResults
+ * - loaders/     PageLoader, SkeletonGrid
+ * - empty/       EmptyState, ErrorState
+ * - branding/    TenantLogo, ThemedButton
+ */

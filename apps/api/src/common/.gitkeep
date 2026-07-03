@@ -1,0 +1,15 @@
+/**
+ * Cross-cutting concerns shared across all modules.
+ *
+ * Structure:
+ * - decorators/    @CurrentUser, @HotelId, @Permissions, @Public
+ * - filters/       HttpExceptionFilter, PrismaExceptionFilter
+ * - guards/        JwtAuthGuard, RolesGuard, PermissionsGuard, TenantGuard
+ * - interceptors/  TransformInterceptor, LoggingInterceptor, TimeoutInterceptor
+ * - middleware/    TenantResolverMiddleware, RequestIdMiddleware
+ * - pipes/         ParseHotelIdPipe, ZodValidationPipe
+ * - constants/     Role names, permission keys, error codes
+ * - types/         RequestWithUser, AuthenticatedUser
+ * - utils/         Pagination helpers, date utilities
+ * - dto/           PaginationDto, ApiResponseDto
+ */

@@ -1,0 +1,119 @@
+// =============================================================================
+// Enterprise CRM — Guest Timeline, Referrals, Gift Cards, Automation
+// =============================================================================
+
+enum ReferralStatus {
+  PENDING
+  BOOKED
+  REWARDED
+  EXPIRED
+  CANCELLED
+}
+
+enum GiftCardStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  CANCELLED
+}
+
+enum AutomationTrigger {
+  BOOKING_CREATED
+  CHECK_IN
+  CHECK_OUT
+  BIRTHDAY
+  ANNIVERSARY
+  FESTIVAL
+  LOYALTY_UPGRADE
+  FEEDBACK_RECEIVED
+  INACTIVE_GUEST
+}
+
+model GuestTimelineEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  guestId   String   @map("guest_id") @db.Uuid
+  eventType String   @map("event_type") @db.VarChar(50)
+  title     String   @db.VarChar(255)
+  description String? @db.Text
+  metadata  Json?
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, guestId, occurredAt(sort: Desc)])
+  @@map("guest_timeline_events")
+}
+
+model GuestCrmNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  guestId   String   @map("guest_id") @db.Uuid
+  note      String   @db.Text
+  category  String?  @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy String?  @map("created_by") @db.Uuid
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, guestId])
+  @@map("guest_crm_notes")
+}
+
+model Referral {
+  id             String         @id @default(uuid()) @db.Uuid
+  hotelId        String         @map("hotel_id") @db.Uuid
+  referrerGuestId String        @map("referrer_guest_id") @db.Uuid
+  referredEmail  String         @map("referred_email") @db.VarChar(255)
+  referredName   String?        @map("referred_name") @db.VarChar(200)
+  referralCode   String         @map("referral_code") @db.VarChar(30)
+  status         ReferralStatus @default(PENDING)
+  rewardPoints   Decimal        @default(0) @map("reward_points") @db.Decimal(12, 2)
+  bookedAt       DateTime?      @map("booked_at") @db.Timestamptz
+  rewardedAt     DateTime?      @map("rewarded_at") @db.Timestamptz
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  referrer Guest @relation("ReferrerGuest", fields: [referrerGuestId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+  @@index([hotelId, referralCode])
+  @@map("referrals")
+}
+
+model GiftCard {
+  id          String         @id @default(uuid()) @db.Uuid
+  hotelId     String         @map("hotel_id") @db.Uuid
+  code        String         @db.VarChar(50)
+  guestId     String?        @map("guest_id") @db.Uuid
+  initialValue Decimal       @map("initial_value") @db.Decimal(12, 2)
+  balance     Decimal        @db.Decimal(12, 2)
+  status      GiftCardStatus @default(ACTIVE)
+  isDigital   Boolean        @default(true) @map("is_digital")
+  expiresAt   DateTime?      @map("expires_at") @db.Timestamptz
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  guest Guest? @relation(fields: [guestId], references: [id], onDelete: SetNull)
+
+  @@unique([hotelId, code])
+  @@index([hotelId, status])
+  @@map("gift_cards")
+}
+
+model MarketingAutomation {
+  id          String            @id @default(uuid()) @db.Uuid
+  hotelId     String            @map("hotel_id") @db.Uuid
+  name        String            @db.VarChar(200)
+  trigger     AutomationTrigger
+  channel     String            @db.VarChar(30)
+  template    String?           @db.Text
+  isActive    Boolean           @default(true) @map("is_active")
+  delayHours  Int               @default(0) @map("delay_hours")
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([hotelId, isActive])
+  @@map("marketing_automations")
+}

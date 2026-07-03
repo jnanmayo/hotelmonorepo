@@ -1,0 +1,198 @@
+// =============================================================================
+// TungaOS Front Desk — Key cards, requests, tasks, lost & found, communications
+// =============================================================================
+
+model KeyCard {
+  id              String        @id @default(uuid()) @db.Uuid
+  hotelId         String        @map("hotel_id") @db.Uuid
+  reservationId   String?       @map("reservation_id") @db.Uuid
+  roomId          String?       @map("room_id") @db.Uuid
+  guestId         String?       @map("guest_id") @db.Uuid
+  cardNumber      String        @map("card_number") @db.VarChar(50)
+  status          KeyCardStatus @default(ACTIVE)
+  issuedAt        DateTime      @default(now()) @map("issued_at") @db.Timestamptz
+  deactivatedAt   DateTime?     @map("deactivated_at") @db.Timestamptz
+  isDuplicate     Boolean       @default(false) @map("is_duplicate")
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz
+  createdBy       String?       @map("created_by") @db.Uuid
+  updatedBy       String?       @map("updated_by") @db.Uuid
+  isActive        Boolean       @default(true) @map("is_active")
+  version         Int           @default(1)
+
+  accessLogs KeyCardAccessLog[]
+
+  @@unique([hotelId, cardNumber])
+  @@index([hotelId, roomId])
+  @@index([hotelId, status])
+  @@map("key_cards")
+}
+
+model KeyCardAccessLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  keyCardId String   @map("key_card_id") @db.Uuid
+  roomId    String?  @map("room_id") @db.Uuid
+  action    String   @db.VarChar(50)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  keyCard KeyCard @relation(fields: [keyCardId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, keyCardId, createdAt(sort: Desc)])
+  @@map("key_card_access_logs")
+}
+
+model GuestRequest {
+  id            String             @id @default(uuid()) @db.Uuid
+  hotelId       String             @map("hotel_id") @db.Uuid
+  reservationId String?            @map("reservation_id") @db.Uuid
+  guestId       String?            @map("guest_id") @db.Uuid
+  roomId        String?            @map("room_id") @db.Uuid
+  requestType   GuestRequestType   @map("request_type")
+  status        GuestRequestStatus @default(PENDING)
+  description   String?            @db.Text
+  scheduledAt   DateTime?          @map("scheduled_at") @db.Timestamptz
+  chargeAmount  Decimal            @default(0) @map("charge_amount") @db.Decimal(12, 2)
+  approvedBy    String?            @map("approved_by") @db.Uuid
+  approvedAt    DateTime?          @map("approved_at") @db.Timestamptz
+  completedAt   DateTime?          @map("completed_at") @db.Timestamptz
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy     String?            @map("created_by") @db.Uuid
+  updatedBy     String?            @map("updated_by") @db.Uuid
+  isActive      Boolean            @default(true) @map("is_active")
+  version       Int                @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+  @@index([hotelId, reservationId])
+  @@map("guest_requests")
+}
+
+model FrontDeskTask {
+  id            String              @id @default(uuid()) @db.Uuid
+  hotelId       String              @map("hotel_id") @db.Uuid
+  reservationId String?             @map("reservation_id") @db.Uuid
+  guestId       String?             @map("guest_id") @db.Uuid
+  roomId        String?             @map("room_id") @db.Uuid
+  taskType      FrontDeskTaskType   @map("task_type")
+  status        FrontDeskTaskStatus @default(PENDING)
+  title         String              @db.VarChar(255)
+  description   String?             @db.Text
+  assignedTo    String?             @map("assigned_to") @db.Uuid
+  priority      ComplaintPriority   @default(MEDIUM)
+  dueAt         DateTime?           @map("due_at") @db.Timestamptz
+  completedAt   DateTime?           @map("completed_at") @db.Timestamptz
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?           @map("deleted_at") @db.Timestamptz
+  createdBy     String?             @map("created_by") @db.Uuid
+  updatedBy     String?             @map("updated_by") @db.Uuid
+  isActive      Boolean             @default(true) @map("is_active")
+  version       Int                 @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+  @@index([hotelId, assignedTo])
+  @@map("front_desk_tasks")
+}
+
+model LostAndFoundItem {
+  id          String          @id @default(uuid()) @db.Uuid
+  hotelId     String          @map("hotel_id") @db.Uuid
+  itemName    String          @map("item_name") @db.VarChar(255)
+  description String?         @db.Text
+  photoUrl    String?         @map("photo_url") @db.VarChar(1000)
+  roomId      String?         @map("room_id") @db.Uuid
+  guestId     String?         @map("guest_id") @db.Uuid
+  guestName   String?         @map("guest_name") @db.VarChar(255)
+  foundBy     String?         @map("found_by") @db.VarChar(255)
+  location    String?         @db.VarChar(255)
+  status      LostFoundStatus @default(FOUND)
+  foundAt     DateTime        @default(now()) @map("found_at") @db.Timestamptz
+  returnedAt  DateTime?       @map("returned_at") @db.Timestamptz
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?       @map("deleted_at") @db.Timestamptz
+  createdBy   String?         @map("created_by") @db.Uuid
+  updatedBy   String?         @map("updated_by") @db.Uuid
+  isActive    Boolean         @default(true) @map("is_active")
+  version     Int             @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+  @@map("lost_and_found_items")
+}
+
+model GuestCommunication {
+  id            String                    @id @default(uuid()) @db.Uuid
+  hotelId       String                    @map("hotel_id") @db.Uuid
+  guestId       String?                   @map("guest_id") @db.Uuid
+  reservationId String?                   @map("reservation_id") @db.Uuid
+  channel       GuestCommunicationChannel
+  messageType   GuestCommunicationType    @map("message_type")
+  recipient     String                    @db.VarChar(255)
+  subject       String?                   @db.VarChar(500)
+  body          String                    @db.Text
+  status        NotificationStatus        @default(QUEUED)
+  sentAt        DateTime?                 @map("sent_at") @db.Timestamptz
+  readAt        DateTime?                 @map("read_at") @db.Timestamptz
+  createdAt     DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime?                 @map("deleted_at") @db.Timestamptz
+  createdBy     String?                   @map("created_by") @db.Uuid
+  isActive      Boolean                   @default(true) @map("is_active")
+  version       Int                       @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, guestId])
+  @@index([hotelId, status])
+  @@map("guest_communications")
+}
+
+model FrontDeskLog {
+  id            String             @id @default(uuid()) @db.Uuid
+  hotelId       String             @map("hotel_id") @db.Uuid
+  userId        String?            @map("user_id") @db.Uuid
+  action        FrontDeskLogAction
+  entityType    String?            @map("entity_type") @db.VarChar(50)
+  entityId      String?            @map("entity_id") @db.Uuid
+  reservationId String?            @map("reservation_id") @db.Uuid
+  description   String?            @db.VarChar(500)
+  metadata      Json?
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@index([hotelId, action])
+  @@map("front_desk_logs")
+}
+
+model VipGuestNote {
+  id              String   @id @default(uuid()) @db.Uuid
+  hotelId         String   @map("hotel_id") @db.Uuid
+  guestId         String   @map("guest_id") @db.Uuid
+  preferredRoom   String?  @map("preferred_room") @db.VarChar(20)
+  welcomeGift     String?  @map("welcome_gift") @db.VarChar(255)
+  specialAmenities Json?   @map("special_amenities")
+  dedicatedNotes  String?  @map("dedicated_notes") @db.Text
+  priorityCheckIn Boolean  @default(true) @map("priority_check_in")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
+  createdBy       String?  @map("created_by") @db.Uuid
+  isActive        Boolean  @default(true) @map("is_active")
+  version         Int      @default(1)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, guestId])
+  @@map("vip_guest_notes")
+}

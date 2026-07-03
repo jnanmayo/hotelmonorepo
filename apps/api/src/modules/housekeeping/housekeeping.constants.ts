@@ -1,0 +1,30 @@
+export const DEFAULT_CHECKLIST_ITEMS = [
+  'Bathroom cleaned',
+  'Bedroom dusted',
+  'Bed sheets changed',
+  'Pillows arranged',
+  'Vacuum floors',
+  'Mini bar checked',
+  'Toiletries replenished',
+  'Water bottles replaced',
+  'Coffee kit refilled',
+  'Trash removed',
+  'Curtains straightened',
+  'TV & remote wiped',
+  'Lights checked',
+  'Air conditioner filter',
+  'Windows cleaned',
+  'Door lock tested',
+] as const;
+
+export const CLEANING_TYPE_ESTIMATES: Record<string, number> = {
+  standard: 30,
+  express: 20,
+  deep: 90,
+  vip: 45,
+  checkout_cleaning: 35,
+  occupied: 25,
+  night: 20,
+  inspection: 15,
+  emergency: 30,
+};

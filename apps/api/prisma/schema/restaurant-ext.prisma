@@ -1,0 +1,72 @@
+// =============================================================================
+// Restaurant POS Extensions — Order types, recipes, feedback, tips
+// =============================================================================
+
+enum FnbOrderType {
+  DINE_IN
+  ROOM_SERVICE
+  TAKEAWAY
+  DELIVERY
+  CORPORATE
+  BANQUET
+  POOLSIDE
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  CLEANING
+  MERGED
+}
+
+enum MenuItemType {
+  FOOD
+  BEVERAGE
+  DESSERT
+  ALCOHOL
+  COMBO
+}
+
+model MenuRecipe {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  menuItemId   String   @unique @map("menu_item_id") @db.Uuid
+  ingredients  Json
+  prepTimeMins Int      @default(15) @map("prep_time_mins")
+  cost         Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  isActive     Boolean  @default(true) @map("is_active")
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@map("menu_recipes")
+}
+
+model FnbFeedback {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  billId       String?  @map("bill_id") @db.Uuid
+  guestId      String?  @map("guest_id") @db.Uuid
+  foodRating   Int?     @map("food_rating") @db.SmallInt
+  serviceRating Int?    @map("service_rating") @db.SmallInt
+  ambienceRating Int?  @map("ambience_rating") @db.SmallInt
+  comments     String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("fnb_feedback")
+}
+
+model WaiterTip {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  billId    String   @map("bill_id") @db.Uuid
+  waiterId  String?  @map("waiter_id") @db.Uuid
+  amount    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([hotelId, waiterId])
+  @@map("waiter_tips")
+}

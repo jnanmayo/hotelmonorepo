@@ -1,0 +1,33 @@
+/**
+ * Feature modules (Clean Architecture vertical slices).
+ *
+ * Each module follows this internal structure:
+ *
+ *   modules/<module-name>/
+ *     <module-name>.module.ts
+ *     presentation/
+ *       controllers/          HTTP controllers (Presentation Layer)
+ *       dto/                  Request/response DTOs
+ *       guards/               Module-specific guards
+ *     application/
+ *       services/             Business logic orchestration (Application Layer)
+ *       interfaces/           Service contracts
+ *       mappers/              Entity ↔ DTO mappers
+ *     domain/
+ *       entities/             Domain entities (Domain Layer)
+ *       interfaces/           Repository contracts
+ *       enums/                Domain enums
+ *       events/               Domain events
+ *     infrastructure/
+ *       repositories/         Prisma implementations (Infrastructure Layer)
+ *       adapters/             External service adapters
+ *
+ * Planned modules:
+ * - auth, tenant, hotel, user, role, permission
+ * - booking, pms, front-desk, housekeeping
+ * - restaurant, room-service, corporate
+ * - inventory, purchase, vendor, maintenance
+ * - hrms, finance, crm, reports
+ * - owner-dashboard, investor, ai-analytics
+ * - integrations, notification, payment
+ */

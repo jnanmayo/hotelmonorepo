@@ -1,0 +1,420 @@
+// =============================================================================
+// Enterprise Inventory & Store Management — TungaOS extensions
+// =============================================================================
+
+enum InventoryStoreType {
+  MAIN
+  KITCHEN
+  RESTAURANT
+  BAR
+  HOUSEKEEPING
+  LAUNDRY
+  MAINTENANCE
+  ENGINEERING
+  SPA
+  BANQUET
+  OFFICE
+  CUSTOM
+}
+
+enum InventoryItemStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+  BLOCKED
+}
+
+enum InventoryDepartment {
+  RESTAURANT
+  KITCHEN
+  HOUSEKEEPING
+  LAUNDRY
+  MAINTENANCE
+  SPA
+  RECEPTION
+  BANQUET
+  BAR
+  OFFICE
+  STORES
+}
+
+enum TransferStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  IN_TRANSIT
+  RECEIVED
+  REJECTED
+  CANCELLED
+}
+
+enum IssueStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  ISSUED
+  RECEIVED
+  REJECTED
+  CANCELLED
+}
+
+enum AdjustmentType {
+  DAMAGE
+  LOST
+  THEFT
+  BREAKAGE
+  MANUAL
+  CORRECTION
+  EXPIRED
+}
+
+enum AdjustmentStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum AuditStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  APPROVED
+  REJECTED
+}
+
+enum PurchaseRequestStatus {
+  DRAFT
+  SUBMITTED
+  DEPT_APPROVED
+  STORE_APPROVED
+  PURCHASE_APPROVED
+  REJECTED
+  FULFILLED
+  CANCELLED
+}
+
+enum CostMethod {
+  AVERAGE
+  WEIGHTED
+  FIFO
+  LIFO
+  FEFO
+}
+
+enum BatchStatus {
+  ACTIVE
+  NEAR_EXPIRY
+  EXPIRED
+  BLOCKED
+  DEPLETED
+}
+
+model InventoryStore {
+  id          String             @id @default(uuid()) @db.Uuid
+  hotelId     String             @map("hotel_id") @db.Uuid
+  name        String             @db.VarChar(100)
+  code        String             @db.VarChar(30)
+  storeType   InventoryStoreType @default(CUSTOM) @map("store_type")
+  location    String?            @db.VarChar(255)
+  capacity    Decimal?           @db.Decimal(14, 2)
+  managerId   String?            @map("manager_id") @db.Uuid
+  permissions Json?
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime?          @map("deleted_at") @db.Timestamptz
+  createdBy   String?            @map("created_by") @db.Uuid
+  updatedBy   String?            @map("updated_by") @db.Uuid
+  deletedBy   String?            @map("deleted_by") @db.Uuid
+  isActive    Boolean            @default(true) @map("is_active")
+  version     Int                @default(1)
+
+  hotel              Hotel              @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  manager            Staff?             @relation(fields: [managerId], references: [id], onDelete: SetNull)
+  stockBalances      StockBalance[]
+  defaultItems       InventoryItem[]    @relation("DefaultStoreItems")
+  batches            StockBatch[]
+  transfersFrom      StockTransfer[]    @relation("TransferFromStore")
+  transfersTo        StockTransfer[]    @relation("TransferToStore")
+  issues             StockIssue[]
+  consumptions       StockConsumption[]
+  adjustments        StockAdjustment[]
+  audits             StockAudit[]
+  grns               GoodsReceiptNote[]
+
+  @@unique([hotelId, code])
+  @@index([hotelId, storeType])
+  @@map("inventory_stores")
+}
+
+model StockBalance {
+  id           String   @id @default(uuid()) @db.Uuid
+  hotelId      String   @map("hotel_id") @db.Uuid
+  storeId      String   @map("store_id") @db.Uuid
+  itemId       String   @map("item_id") @db.Uuid
+  quantity     Decimal  @default(0) @db.Decimal(14, 4)
+  reservedQty  Decimal  @default(0) @map("reserved_qty") @db.Decimal(14, 4)
+  averageCost  Decimal  @default(0) @map("average_cost") @db.Decimal(12, 4)
+  lastMovement DateTime? @map("last_movement") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  store InventoryStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  item  InventoryItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, itemId])
+  @@index([hotelId, storeId])
+  @@index([hotelId, itemId])
+  @@map("stock_balances")
+}
+
+model StockBatch {
+  id               String      @id @default(uuid()) @db.Uuid
+  hotelId          String      @map("hotel_id") @db.Uuid
+  storeId          String      @map("store_id") @db.Uuid
+  itemId           String      @map("item_id") @db.Uuid
+  batchNumber      String      @map("batch_number") @db.VarChar(50)
+  vendorBatch      String?     @map("vendor_batch") @db.VarChar(50)
+  serialNumber     String?     @map("serial_number") @db.VarChar(100)
+  quantity         Decimal     @default(0) @db.Decimal(14, 4)
+  remainingQty     Decimal     @default(0) @map("remaining_qty") @db.Decimal(14, 4)
+  unitCost         Decimal     @default(0) @map("unit_cost") @db.Decimal(12, 4)
+  manufacturingDate DateTime?  @map("manufacturing_date") @db.Date
+  expiryDate       DateTime?   @map("expiry_date") @db.Date
+  status           BatchStatus @default(ACTIVE)
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  store InventoryStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  item  InventoryItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, storeId, itemId, batchNumber])
+  @@index([hotelId, expiryDate])
+  @@index([hotelId, status])
+  @@map("stock_batches")
+}
+
+model StockTransfer {
+  id              String         @id @default(uuid()) @db.Uuid
+  hotelId         String         @map("hotel_id") @db.Uuid
+  transferNumber  String         @map("transfer_number") @db.VarChar(30)
+  fromStoreId     String         @map("from_store_id") @db.Uuid
+  toStoreId       String         @map("to_store_id") @db.Uuid
+  status          TransferStatus @default(DRAFT)
+  requestedById   String?        @map("requested_by_id") @db.Uuid
+  approvedById    String?        @map("approved_by_id") @db.Uuid
+  receivedById    String?        @map("received_by_id") @db.Uuid
+  notes           String?        @db.Text
+  transferDate    DateTime       @default(now()) @map("transfer_date") @db.Timestamptz
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  fromStore InventoryStore      @relation("TransferFromStore", fields: [fromStoreId], references: [id], onDelete: Restrict)
+  toStore   InventoryStore      @relation("TransferToStore", fields: [toStoreId], references: [id], onDelete: Restrict)
+  items     StockTransferItem[]
+
+  @@unique([hotelId, transferNumber])
+  @@index([hotelId, status])
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  transferId String  @map("transfer_id") @db.Uuid
+  itemId     String  @map("item_id") @db.Uuid
+  quantity   Decimal @db.Decimal(14, 4)
+  batchNumber String? @map("batch_number") @db.VarChar(50)
+
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  item     InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([transferId])
+  @@map("stock_transfer_items")
+}
+
+model StockIssue {
+  id            String             @id @default(uuid()) @db.Uuid
+  hotelId       String             @map("hotel_id") @db.Uuid
+  issueNumber   String             @map("issue_number") @db.VarChar(30)
+  storeId       String             @map("store_id") @db.Uuid
+  department    InventoryDepartment
+  status        IssueStatus        @default(DRAFT)
+  requestedById String?            @map("requested_by_id") @db.Uuid
+  approvedById  String?            @map("approved_by_id") @db.Uuid
+  issuedById    String?            @map("issued_by_id") @db.Uuid
+  receivedById  String?            @map("received_by_id") @db.Uuid
+  notes         String?            @db.Text
+  issueDate     DateTime           @default(now()) @map("issue_date") @db.Timestamptz
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  store InventoryStore   @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  items StockIssueItem[]
+
+  @@unique([hotelId, issueNumber])
+  @@index([hotelId, status])
+  @@map("stock_issues")
+}
+
+model StockIssueItem {
+  id       String  @id @default(uuid()) @db.Uuid
+  issueId  String  @map("issue_id") @db.Uuid
+  itemId   String  @map("item_id") @db.Uuid
+  quantity Decimal @db.Decimal(14, 4)
+
+  issue StockIssue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  item  InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([issueId])
+  @@map("stock_issue_items")
+}
+
+model StockConsumption {
+  id           String              @id @default(uuid()) @db.Uuid
+  hotelId      String              @map("hotel_id") @db.Uuid
+  storeId      String              @map("store_id") @db.Uuid
+  itemId       String              @map("item_id") @db.Uuid
+  department   InventoryDepartment
+  quantity     Decimal             @db.Decimal(14, 4)
+  unitCost     Decimal             @default(0) @map("unit_cost") @db.Decimal(12, 4)
+  reference    String?             @db.VarChar(100)
+  sourceModule String?             @map("source_module") @db.VarChar(50)
+  sourceId     String?             @map("source_id") @db.Uuid
+  notes        String?             @db.Text
+  consumedAt   DateTime            @default(now()) @map("consumed_at") @db.Timestamptz
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  store InventoryStore @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  item  InventoryItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([hotelId, consumedAt(sort: Desc)])
+  @@index([hotelId, department])
+  @@map("stock_consumptions")
+}
+
+model StockAdjustment {
+  id           String           @id @default(uuid()) @db.Uuid
+  hotelId      String           @map("hotel_id") @db.Uuid
+  storeId      String           @map("store_id") @db.Uuid
+  itemId       String           @map("item_id") @db.Uuid
+  adjustNumber String           @map("adjust_number") @db.VarChar(30)
+  type         AdjustmentType
+  status       AdjustmentStatus @default(DRAFT)
+  quantity     Decimal          @db.Decimal(14, 4)
+  reason       String?          @db.Text
+  approvedById String?          @map("approved_by_id") @db.Uuid
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  store InventoryStore @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  item  InventoryItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@unique([hotelId, adjustNumber])
+  @@index([hotelId, status])
+  @@map("stock_adjustments")
+}
+
+model StockAudit {
+  id           String      @id @default(uuid()) @db.Uuid
+  hotelId      String      @map("hotel_id") @db.Uuid
+  storeId      String      @map("store_id") @db.Uuid
+  auditNumber  String      @map("audit_number") @db.VarChar(30)
+  status       AuditStatus @default(DRAFT)
+  auditType    String      @default("cycle") @map("audit_type") @db.VarChar(30)
+  scheduledAt  DateTime?   @map("scheduled_at") @db.Timestamptz
+  completedAt  DateTime?   @map("completed_at") @db.Timestamptz
+  approvedById String?     @map("approved_by_id") @db.Uuid
+  notes        String?     @db.Text
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  store InventoryStore   @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  items StockAuditItem[]
+
+  @@unique([hotelId, auditNumber])
+  @@index([hotelId, status])
+  @@map("stock_audits")
+}
+
+model StockAuditItem {
+  id           String  @id @default(uuid()) @db.Uuid
+  auditId      String  @map("audit_id") @db.Uuid
+  itemId       String  @map("item_id") @db.Uuid
+  systemQty    Decimal @map("system_qty") @db.Decimal(14, 4)
+  physicalQty  Decimal @default(0) @map("physical_qty") @db.Decimal(14, 4)
+  variance     Decimal @default(0) @db.Decimal(14, 4)
+  notes        String? @db.Text
+
+  audit StockAudit    @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  item  InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([auditId])
+  @@map("stock_audit_items")
+}
+
+model InventoryPurchaseRequest {
+  id            String                @id @default(uuid()) @db.Uuid
+  hotelId       String                @map("hotel_id") @db.Uuid
+  requestNumber String                @map("request_number") @db.VarChar(30)
+  department    InventoryDepartment
+  status        PurchaseRequestStatus @default(DRAFT)
+  requestedById String?               @map("requested_by_id") @db.Uuid
+  deptApprovedById String?            @map("dept_approved_by_id") @db.Uuid
+  storeApprovedById String?            @map("store_approved_by_id") @db.Uuid
+  notes         String?               @db.Text
+  createdAt     DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  items InventoryPurchaseRequestItem[]
+
+  @@unique([hotelId, requestNumber])
+  @@index([hotelId, status])
+  @@map("inventory_purchase_requests")
+}
+
+model InventoryPurchaseRequestItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  requestId String  @map("request_id") @db.Uuid
+  itemId    String  @map("item_id") @db.Uuid
+  quantity  Decimal @db.Decimal(14, 4)
+  notes     String? @db.Text
+
+  request InventoryPurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  item    InventoryItem            @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([requestId])
+  @@map("inventory_purchase_request_items")
+}
+
+model ReorderRule {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  itemId    String   @map("item_id") @db.Uuid
+  minLevel  Decimal  @map("min_level") @db.Decimal(14, 4)
+  reorderQty Decimal @map("reorder_qty") @db.Decimal(14, 4)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  item InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, itemId])
+  @@map("reorder_rules")
+}
+
+model InventoryLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  entity    String   @db.VarChar(50)
+  entityId  String   @map("entity_id") @db.Uuid
+  action    String   @db.VarChar(50)
+  details   Json?
+  userId    String?  @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, entity, createdAt(sort: Desc)])
+  @@map("inventory_logs")
+}

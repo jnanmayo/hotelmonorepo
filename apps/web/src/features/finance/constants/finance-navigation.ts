@@ -1,0 +1,86 @@
+const BASE = '/finance';
+
+export const FIN_ROUTES = {
+  home: '/app/finance',
+  chartOfAccounts: '/app/finance/chart-of-accounts',
+  generalLedger: '/app/finance/general-ledger',
+  journalEntries: '/app/finance/journal-entries',
+  receivables: '/app/finance/receivables',
+  payables: '/app/finance/payables',
+  revenue: '/app/finance/revenue',
+  expenses: '/app/finance/expenses',
+  bank: '/app/finance/bank',
+  cash: '/app/finance/cash',
+  gst: '/app/finance/gst',
+  tax: '/app/finance/tax',
+  budget: '/app/finance/budget',
+  costCenters: '/app/finance/cost-centers',
+  invoices: '/app/finance/invoices',
+  nightAudit: '/app/finance/night-audit',
+  reconciliation: '/app/finance/reconciliation',
+  departments: '/app/finance/departments',
+  fixedAssets: '/app/finance/fixed-assets',
+  reports: '/app/finance/reports',
+  analytics: '/app/finance/analytics',
+  owner: '/app/finance/owner',
+  approvals: '/app/finance/approvals',
+  mobile: '/app/finance/mobile',
+} as const;
+
+export const FIN_API = {
+  dashboard: `${BASE}/dashboard`,
+  ownerDashboard: `${BASE}/owner-dashboard`,
+  seed: `${BASE}/seed`,
+  sync: `${BASE}/sync`,
+  accounts: `${BASE}/accounts`,
+  journalEntries: `${BASE}/journal-entries`,
+  postJournal: (id: string) => `${BASE}/journal-entries/${id}/post`,
+  generalLedger: `${BASE}/general-ledger`,
+  trialBalance: `${BASE}/trial-balance`,
+  receivables: `${BASE}/receivables`,
+  payables: `${BASE}/payables`,
+  expenses: `${BASE}/expenses`,
+  revenue: `${BASE}/revenue`,
+  bankAccounts: `${BASE}/bank-accounts`,
+  cash: `${BASE}/cash`,
+  budgets: `${BASE}/budgets`,
+  costCenters: `${BASE}/cost-centers`,
+  gst: `${BASE}/gst`,
+  approvals: `${BASE}/approvals`,
+  approve: (type: string, id: string) => `${BASE}/approvals/${type}/${id}`,
+  analytics: `${BASE}/analytics`,
+  report: (type: string) => `${BASE}/reports/${type}`,
+} as const;
+
+export const FIN_NAV = [
+  { label: 'Dashboard', href: FIN_ROUTES.home },
+  { label: 'Chart of Accounts', href: FIN_ROUTES.chartOfAccounts },
+  { label: 'General Ledger', href: FIN_ROUTES.generalLedger },
+  { label: 'Journal Entries', href: FIN_ROUTES.journalEntries },
+  { label: 'Receivables', href: FIN_ROUTES.receivables },
+  { label: 'Payables', href: FIN_ROUTES.payables },
+  { label: 'Revenue', href: FIN_ROUTES.revenue },
+  { label: 'Expenses', href: FIN_ROUTES.expenses },
+  { label: 'Bank', href: FIN_ROUTES.bank },
+  { label: 'Cash', href: FIN_ROUTES.cash },
+  { label: 'GST', href: FIN_ROUTES.gst },
+  { label: 'Tax / TDS', href: FIN_ROUTES.tax },
+  { label: 'Budget', href: FIN_ROUTES.budget },
+  { label: 'Cost Centers', href: FIN_ROUTES.costCenters },
+  { label: 'Invoices', href: FIN_ROUTES.invoices },
+  { label: 'Night Audit', href: FIN_ROUTES.nightAudit },
+  { label: 'Reconciliation', href: FIN_ROUTES.reconciliation },
+  { label: 'Departments', href: FIN_ROUTES.departments },
+  { label: 'Fixed Assets', href: FIN_ROUTES.fixedAssets },
+  { label: 'Reports', href: FIN_ROUTES.reports },
+  { label: 'Analytics', href: FIN_ROUTES.analytics },
+  { label: 'Owner View', href: FIN_ROUTES.owner },
+  { label: 'Approvals', href: FIN_ROUTES.approvals },
+  { label: 'Mobile', href: FIN_ROUTES.mobile },
+] as const;
+
+export function isFinanceRoute(pathname: string): boolean {
+  return pathname === '/app/finance' || pathname.startsWith('/app/finance/');
+}
+
+export { FINANCE_WORKFLOW_MERMAID } from '@tungaos/shared';

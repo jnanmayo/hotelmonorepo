@@ -1,0 +1,35 @@
+/**
+ * Feature-based modules (vertical slices).
+ *
+ * Each module is self-contained:
+ *   features/<module-name>/
+ *     components/    Module-specific UI
+ *     hooks/         Module-specific hooks
+ *     services/      Module API services
+ *     types/         Module types
+ *     utils/         Module utilities
+ *     index.ts       Public API barrel export
+ *
+ * Planned modules:
+ * - website          Hotel public website
+ * - booking          Direct booking engine
+ * - pms              Property management
+ * - front-desk       Reception operations
+ * - housekeeping     Room status & tasks
+ * - restaurant       POS & menu
+ * - room-service     QR ordering
+ * - corporate        B2B portal
+ * - inventory        Stock management
+ * - purchase         Procurement
+ * - vendors          Vendor management
+ * - maintenance      Work orders
+ * - hrms             Human resources
+ * - finance          Accounting & billing
+ * - crm              Guest relationship
+ * - reports          Analytics & exports
+ * - owner-dashboard  Owner KPIs
+ * - investor         Investor reporting
+ * - ai-analytics     AI insights
+ * - integrations     Third-party connectors
+ * - admin            Super admin panel
+ */

@@ -1,0 +1,189 @@
+// =============================================================================
+// TungaOS Guest Experience Platform (GXP) — Digital Concierge
+// =============================================================================
+
+enum GxpRequestCategory {
+  ROOM_SERVICE
+  HOUSEKEEPING
+  LAUNDRY
+  MAINTENANCE
+  SPA
+  TRANSPORT
+  WAKE_UP
+  CONCIERGE
+  OTHER
+}
+
+enum GxpRequestStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum GxpChatDepartment {
+  RECEPTION
+  RESTAURANT
+  HOUSEKEEPING
+  MAINTENANCE
+  MANAGER
+}
+
+model GuestPortalSession {
+  id             String    @id @default(uuid()) @db.Uuid
+  hotelId        String    @map("hotel_id") @db.Uuid
+  reservationId  String    @map("reservation_id") @db.Uuid
+  guestId        String    @map("guest_id") @db.Uuid
+  roomId         String?   @map("room_id") @db.Uuid
+  sessionToken   String    @unique @map("session_token") @db.VarChar(64)
+  language       String    @default("en") @db.VarChar(10)
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz
+  lastActiveAt   DateTime  @default(now()) @map("last_active_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  isActive       Boolean   @default(true) @map("is_active")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, reservationId])
+  @@index([sessionToken])
+  @@map("guest_portal_sessions")
+}
+
+model RoomQrCode {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  roomId    String   @map("room_id") @db.Uuid
+  token     String   @db.VarChar(64)
+  qrData    String   @map("qr_data") @db.VarChar(255)
+  scanCount Int      @default(0) @map("scan_count")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  isActive  Boolean  @default(true) @map("is_active")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, roomId])
+  @@unique([token])
+  @@map("room_qr_codes")
+}
+
+model GxpRequest {
+  id            String             @id @default(uuid()) @db.Uuid
+  hotelId       String             @map("hotel_id") @db.Uuid
+  sessionId     String?            @map("session_id") @db.Uuid
+  reservationId String             @map("reservation_id") @db.Uuid
+  guestId       String             @map("guest_id") @db.Uuid
+  roomId        String?            @map("room_id") @db.Uuid
+  category      GxpRequestCategory
+  subType       String             @map("sub_type") @db.VarChar(100)
+  status        GxpRequestStatus   @default(PENDING)
+  description   String?            @db.Text
+  scheduledAt   DateTime?          @map("scheduled_at") @db.Timestamptz
+  photoUrls     Json?              @map("photo_urls")
+  metadata      Json?
+  completedAt   DateTime?          @map("completed_at") @db.Timestamptz
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  isActive      Boolean            @default(true) @map("is_active")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+  @@index([hotelId, reservationId])
+  @@index([hotelId, category])
+  @@map("gxp_requests")
+}
+
+model GxpChatMessage {
+  id            String            @id @default(uuid()) @db.Uuid
+  hotelId       String            @map("hotel_id") @db.Uuid
+  sessionId     String?           @map("session_id") @db.Uuid
+  reservationId String            @map("reservation_id") @db.Uuid
+  department    GxpChatDepartment @default(RECEPTION)
+  senderType    String            @map("sender_type") @db.VarChar(20)
+  senderName    String?           @map("sender_name") @db.VarChar(100)
+  message       String            @db.Text
+  readAt        DateTime?         @map("read_at") @db.Timestamptz
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, reservationId, createdAt(sort: Desc)])
+  @@map("gxp_chat_messages")
+}
+
+model GxpFeedback {
+  id              String   @id @default(uuid()) @db.Uuid
+  hotelId         String   @map("hotel_id") @db.Uuid
+  reservationId   String   @map("reservation_id") @db.Uuid
+  guestId         String   @map("guest_id") @db.Uuid
+  roomRating      Int?     @map("room_rating") @db.SmallInt
+  foodRating      Int?     @map("food_rating") @db.SmallInt
+  staffRating     Int?     @map("staff_rating") @db.SmallInt
+  housekeepingRating Int?  @map("housekeeping_rating") @db.SmallInt
+  overallRating   Int?     @map("overall_rating") @db.SmallInt
+  comments        String?  @db.Text
+  photoUrls       Json?    @map("photo_urls")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@map("gxp_feedback")
+}
+
+model GxpOffer {
+  id          String    @id @default(uuid()) @db.Uuid
+  hotelId     String    @map("hotel_id") @db.Uuid
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  offerType   String    @map("offer_type") @db.VarChar(50)
+  discountPct Decimal?  @map("discount_pct") @db.Decimal(5, 2)
+  imageUrl    String?   @map("image_url") @db.VarChar(1000)
+  startsAt    DateTime? @map("starts_at") @db.Timestamptz
+  endsAt      DateTime? @map("ends_at") @db.Timestamptz
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, isActive])
+  @@map("gxp_offers")
+}
+
+model GxpAnnouncement {
+  id        String   @id @default(uuid()) @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  title     String   @db.VarChar(255)
+  body      String   @db.Text
+  priority  String   @default("NORMAL") @db.VarChar(20)
+  startsAt  DateTime @default(now()) @map("starts_at") @db.Timestamptz
+  endsAt    DateTime? @map("ends_at") @db.Timestamptz
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, isActive])
+  @@map("gxp_announcements")
+}
+
+model GxpNotification {
+  id            String   @id @default(uuid()) @db.Uuid
+  hotelId       String   @map("hotel_id") @db.Uuid
+  reservationId String   @map("reservation_id") @db.Uuid
+  title         String   @db.VarChar(255)
+  body          String   @db.Text
+  type          String   @db.VarChar(50)
+  readAt        DateTime? @map("read_at") @db.Timestamptz
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, reservationId, createdAt(sort: Desc)])
+  @@map("gxp_notifications")
+}
