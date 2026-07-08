@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CreateRoomButton } from '@/features/rooms/components/create-room-button';
 import { ROOMS_API, ROOMS_ROUTES } from '@/features/rooms/constants/room-navigation';
 import { RoomsShell } from '@/features/rooms/components/rooms-shell';
+import { useOnRoomCreated } from '@/features/rooms/hooks/use-on-room-created';
 import { useRoomsRealtime } from '@/features/rooms/hooks/use-rooms-realtime';
 import { asRoute } from '@/lib/navigation';
 import { apiClient } from '@/services/api-client';
@@ -68,8 +70,10 @@ export function RoomBoard() {
     load();
   }, [load]);
 
+  useOnRoomCreated(load);
+
   useRoomsRealtime(hotelId, (e) => {
-    if (e.type === 'room:status') load();
+    if (e.type === 'room:status' || e.type === 'dashboard:update' || e.type === 'occupancy:update') load();
   });
 
   const updateStatus = async (roomId: string, status: string) => {
@@ -86,6 +90,7 @@ export function RoomBoard() {
   return (
     <RoomsShell title="Room Status Board" description="Real-time room inventory — click a room for profile">
       <div className="mb-4 flex flex-wrap items-center gap-3">
+        <CreateRoomButton onSuccess={load} />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Filter status" />

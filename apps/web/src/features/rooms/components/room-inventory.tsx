@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Building2, ChevronRight, Loader2, Plus } from 'lucide-react';
+import { Building2, ChevronRight, Loader2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { CreateRoomButton } from '@/features/rooms/components/create-room-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROOMS_API } from '@/features/rooms/constants/room-navigation';
 import { RoomsShell } from '@/features/rooms/components/rooms-shell';
+import { useOnRoomCreated } from '@/features/rooms/hooks/use-on-room-created';
 import { apiClient } from '@/services/api-client';
 
 import type { RoomInventory } from '@tungaos/shared';
@@ -28,6 +29,8 @@ export function RoomInventoryPage() {
     load();
   }, [load]);
 
+  useOnRoomCreated(load);
+
   if (loading) {
     return (
       <RoomsShell title="Property Structure" description="Hotel → Building → Floor → Room Type → Room">
@@ -42,11 +45,9 @@ export function RoomInventoryPage() {
 
   return (
     <RoomsShell title="Property Structure" description="Digital twin hierarchy — buildings, floors, room types, and rooms">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Badge variant="secondary">{inv.totalRooms} total rooms</Badge>
-        <Button size="sm" variant="outline" disabled>
-          <Plus className="mr-1 h-4 w-4" /> Add Building
-        </Button>
+        <CreateRoomButton onSuccess={load} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

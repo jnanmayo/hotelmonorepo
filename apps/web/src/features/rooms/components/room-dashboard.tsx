@@ -16,8 +16,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CreateRoomButton } from '@/features/rooms/components/create-room-button';
 import { ROOMS_API, ROOMS_ROUTES } from '@/features/rooms/constants/room-navigation';
 import { RoomsShell } from '@/features/rooms/components/rooms-shell';
+import { useOnRoomCreated } from '@/features/rooms/hooks/use-on-room-created';
 import { useRoomsRealtime } from '@/features/rooms/hooks/use-rooms-realtime';
 import { asRoute } from '@/lib/navigation';
 import { apiClient } from '@/services/api-client';
@@ -56,6 +58,8 @@ export function RoomDashboard() {
     load();
   }, [load]);
 
+  useOnRoomCreated(load);
+
   useRoomsRealtime(hotelId, (e) => {
     if (e.type === 'dashboard:update' || e.type === 'room:status' || e.type === 'occupancy:update') load();
   });
@@ -75,6 +79,7 @@ export function RoomDashboard() {
   return (
     <RoomsShell title="Room Management" description="Real-time digital twin — occupancy, revenue, and room operations">
       <div className="mb-4 flex flex-wrap gap-2">
+        <CreateRoomButton onSuccess={load} />
         <Button asChild size="sm">
           <Link href={asRoute(ROOMS_ROUTES.board)}>Status Board</Link>
         </Button>
