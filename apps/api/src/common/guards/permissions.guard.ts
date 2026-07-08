@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { PERMISSIONS_KEY } from '@/common/decorators/auth.decorators';
@@ -22,6 +17,9 @@ export class PermissionsGuard implements CanActivate {
     if (!required?.length) return true;
 
     const { user } = context.switchToHttp().getRequest<{ user: JwtPayload }>();
+    if (user.roles?.includes('SUPER_ADMIN')) {
+      return true;
+    }
     const hasAll = required.every((p) => user.permissions.includes(p));
     if (!hasAll) {
       throw new ForbiddenException('Missing required permissions');

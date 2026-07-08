@@ -20,7 +20,7 @@ export class CommandCenterController {
   }
 
   @Get('dashboard')
-  // @RequirePermissions('dashboard:overview:read')
+  @RequirePermissions('dashboard:overview:read')
   async getDashboard(@CurrentUser() user: JwtPayload) {
     const hotelId = this.hotelId(user);
     if (!hotelId) return { data: null };
