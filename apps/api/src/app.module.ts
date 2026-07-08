@@ -29,12 +29,14 @@ import { HrModule } from '@/modules/hr/hr.module';
 import { RestaurantModule } from '@/modules/restaurant/restaurant.module';
 import { RoomsModule } from '@/modules/rooms/rooms.module';
 import { WebsiteModule } from '@/modules/website/website.module';
+import { EmailModule } from './modules/email/email.module';
+import { emailConfig } from '@/config/email.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, authConfig, databaseConfig, redisConfig, storageConfig],
+      load: [appConfig, authConfig, databaseConfig, redisConfig, storageConfig, emailConfig],
       validate: validateEnv,
       envFilePath: ['.env.local', '.env'],
     }),
@@ -65,6 +67,7 @@ import { WebsiteModule } from '@/modules/website/website.module';
     TravelDeskModule,
     CommandCenterModule,
     GxpModule,
+    EmailModule,
   ],
   controllers: [],
   providers: [],
