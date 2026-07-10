@@ -29,6 +29,7 @@ import {
 import { AuthService } from '@/modules/auth/services/auth.service';
 
 import type { JwtPayload } from '@tungaos/shared';
+import type { RegisterHotelPropertyInput } from '@tungaos/shared';
 import type { Request } from 'express';
 
 @ApiTags('Authentication')
@@ -77,6 +78,13 @@ export class AuthController {
   @Post('register/hotel')
   async registerHotel(@Body() dto: RegisterHotelDto) {
     const data = await this.authService.registerHotel(dto);
+    return { success: true, data, timestamp: new Date().toISOString() };
+  }
+
+  @Public()
+  @Post('register/property')
+  async registerHotelProperty(@Body() dto: RegisterHotelPropertyInput) {
+    const data = await this.authService.registerHotelProperty(dto);
     return { success: true, data, timestamp: new Date().toISOString() };
   }
 

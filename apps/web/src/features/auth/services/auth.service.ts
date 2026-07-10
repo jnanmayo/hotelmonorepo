@@ -7,6 +7,7 @@ import type {
   ForgotPasswordInput,
   LoginInput,
   RegisterHotelInput,
+  RegisterHotelPropertyInput,
   RegisterOwnerInput,
 } from '@tungaos/shared/validation';
 import type { AuthUser, LoginResponse } from '@tungaos/shared/types';
@@ -102,6 +103,14 @@ export const authService = {
   async registerHotel(data: RegisterHotelInput): Promise<{ hotelId: string }> {
     const response = await apiClient.post<{ data: { hotelId: string } }>(
       '/auth/register/hotel',
+      data,
+    );
+    return response.data.data;
+  },
+
+  async registerHotelProperty(data: RegisterHotelPropertyInput): Promise<{ hotelId: string }> {
+    const response = await apiClient.post<{ data: { hotelId: string } }>(
+      '/auth/register/property',
       data,
     );
     return response.data.data;
