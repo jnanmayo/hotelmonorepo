@@ -6,6 +6,6 @@
     }
   ],
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm run build",
+  "buildCommand": "pnpm turbo build --filter=@tungaos/web --force",
   "outputDirectory": "apps/web/.next"
 }
