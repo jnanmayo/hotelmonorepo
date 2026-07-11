@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   MinLength,
 } from 'class-validator';
 
@@ -45,6 +46,9 @@ export class RegisterHotelDto {
 }
 
 export class RegisterOwnerDto {
+  @IsUUID()
+  hotelId!: string;
+
   @IsString()
   firstName!: string;
 

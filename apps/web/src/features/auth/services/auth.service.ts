@@ -7,6 +7,7 @@ import type {
   ForgotPasswordInput,
   LoginInput,
   RegisterHotelInput,
+  RegisterHotelPropertyInput,
   RegisterOwnerInput,
 } from '@tungaos/shared/validation';
 import type { AuthUser, LoginResponse } from '@tungaos/shared/types';
@@ -49,7 +50,7 @@ export const authService = {
   async logout(): Promise<void> {
     try {
       // await apiClient.post('/auth/logout');
-      console.log(useAuthStore)
+      console.log(useAuthStore);
     } finally {
       clearAuthCookies();
       useAuthStore.getState().clearSession();
@@ -107,7 +108,16 @@ export const authService = {
     return response.data.data;
   },
 
+  async registerHotelProperty(data: RegisterHotelPropertyInput): Promise<{ hotelId: string }> {
+    const response = await apiClient.post<{ data: { hotelId: string } }>(
+      '/auth/register/property',
+      data,
+    );
+    return response.data.data;
+  },
+
   async registerOwner(data: RegisterOwnerInput): Promise<{ userId: string }> {
+    console.log('cs');
     const response = await apiClient.post<{ data: { userId: string } }>(
       '/auth/register/owner',
       data,

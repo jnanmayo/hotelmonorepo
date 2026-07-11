@@ -16,6 +16,7 @@ export function useAuth() {
     resetPassword: (token: string, password: string) => authService.resetPassword(token, password),
     verifyEmail: (token: string) => authService.verifyEmail(token),
     registerHotel: authService.registerHotel,
+    registerHotelProperty: authService.registerHotelProperty,
     registerOwner: authService.registerOwner,
     googleLogin: () => authService.googleLogin(),
   };

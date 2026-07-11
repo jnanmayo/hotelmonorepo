@@ -71,7 +71,6 @@ model RoomType {
 
   hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   rooms       Room[]
-  images      RoomImage[]
   amenities   RoomTypeAmenity[]
   reservations Reservation[]
   dynamicPriceRules DynamicPriceRule[]
@@ -131,7 +130,7 @@ model RoomTypeAmenity {
 model RoomImage {
   id         String   @id @default(uuid()) @db.Uuid
   hotelId    String   @map("hotel_id") @db.Uuid
-  roomTypeId String   @map("room_type_id") @db.Uuid
+  roomId     String   @map("room_id") @db.Uuid
   fileId     String   @map("file_id") @db.Uuid
   isPrimary  Boolean  @default(false) @map("is_primary")
   sortOrder  Int      @default(0) @map("sort_order")
@@ -144,10 +143,10 @@ model RoomImage {
   isActive   Boolean  @default(true) @map("is_active")
   version    Int      @default(1)
 
-  roomType RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
-  file     StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  room Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  file StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
-  @@index([hotelId, roomTypeId])
+  @@index([hotelId, roomId])
   @@map("room_images")
 }
 
@@ -187,6 +186,7 @@ model Room {
   inspections        RoomInspection[]
   damages            RoomDamage[]
   roomAssets         RoomAsset[]
+  images             RoomImage[]
   eamAssets          Asset[]
   workOrders         WorkOrder[]
   energyReadings     EnergyReading[]
@@ -260,3 +260,4 @@ model Asset {
   @@index([hotelId, categoryId])
   @@map("assets")
 }
+ 

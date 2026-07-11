@@ -34,6 +34,7 @@ export const registerHotelSchema = z.object({
 
 export const registerOwnerSchema = z
   .object({
+    hotelId: z.string().uuid(),
     firstName: z.string().min(1, 'First name is required').max(100),
     lastName: z.string().min(1, 'Last name is required').max(100),
     email: emailSchema,

@@ -31,12 +31,33 @@ export class AvailabilityService {
       },
       include: {
         amenities: { include: { amenity: true } },
-        images: { include: { file: true }, orderBy: { sortOrder: 'asc' }, take: 5 },
         cmsWebsiteRooms: { where: { deletedAt: null, status: 'PUBLISHED' }, take: 1 },
         ratePlans: { where: { isActive: true, deletedAt: null }, orderBy: { sortOrder: 'asc' } },
       },
       orderBy: { baseRate: 'asc' },
     });
+
+    const roomTypeIds = roomTypes.map((rt) => rt.id);
+    const allRoomImages = roomTypeIds.length
+      ? await this.prisma.roomImage.findMany({
+          where: {
+            hotelId: query.hotelId,
+            room: { roomTypeId: { in: roomTypeIds } },
+            isActive: true,
+            deletedAt: null,
+          },
+          include: { file: true, room: { select: { roomTypeId: true } } },
+          orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
+        })
+      : [];
+
+    const imagesByRoomType = new Map<string, string[]>();
+    for (const img of allRoomImages) {
+      const typeId = img.room.roomTypeId;
+      const list = imagesByRoomType.get(typeId) ?? [];
+      if (list.length < 5) list.push(img.file.fileUrl);
+      imagesByRoomType.set(typeId, list);
+    }
 
     const results = [];
     for (const rt of roomTypes) {
@@ -57,7 +78,7 @@ export class AvailabilityService {
         bedType: cms?.bedType ?? rt.bedType,
         viewType: rt.viewType,
         amenities: rt.amenities.map((a) => a.amenity.name),
-        images: this.extractImages(rt, cms),
+        images: this.extractImages(imagesByRoomType.get(rt.id) ?? [], cms),
         availableCount: available,
         cmsSlug: cms?.slug,
         ratePlans: rt.ratePlans.map((rp) => ({
@@ -172,13 +193,12 @@ export class AvailabilityService {
   }
 
   private extractImages(
-    rt: { images: { file: { fileUrl: string } }[] },
+    roomImageUrls: string[],
     cms: { images: Prisma.JsonValue } | undefined,
   ): string[] {
     const cmsImages = Array.isArray(cms?.images)
       ? (cms.images as { url?: string }[]).map((i) => i.url).filter(Boolean) as string[]
       : [];
-    const dbImages = rt.images.map((i) => i.file.fileUrl).filter(Boolean);
-    return cmsImages.length > 0 ? cmsImages : dbImages;
+    return cmsImages.length > 0 ? cmsImages : roomImageUrls.filter(Boolean);
   }
 }

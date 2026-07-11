@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { PrismaService } from '@/infrastructure/database/prisma.service';
@@ -20,6 +16,11 @@ import { PasswordService } from '@/modules/auth/services/password.service';
 import { TokenService } from '@/modules/auth/services/token.service';
 
 import { AUTH_DEFAULTS, type AuthUser, type LoginResponse } from '@tungaos/shared';
+import type { RegisterHotelPropertyInput } from '@tungaos/shared';
+import { CreateRoleDto } from '@/modules/auth/dto/create-role.dto';
+import { CreatePermissionDto } from '@/modules/auth/dto/create-permission.dto';
+import { CreateRolePermissionDto } from '@/modules/auth/dto/create-role-permission.dto';
+import { CreateUserRoleDto } from '@/modules/auth/dto/create-user-role.dto';
 
 @Injectable()
 export class AuthService {
@@ -54,7 +55,7 @@ export class AuthService {
         },
       },
     });
-
+    console.log(user);
     if (!user?.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -149,13 +150,109 @@ export class AuthService {
     return { hotelId: hotel.id };
   }
 
+  async registerHotelProperty(dto: RegisterHotelPropertyInput): Promise<{ hotelId: string }> {
+    const hotel = await this.prisma.hotel.findFirst({
+      where: { id: dto.hotelId, deletedAt: null, status: 'PENDING_SETUP' },
+    });
+    if (!hotel) {
+      throw new BadRequestException('Hotel not found or property setup already completed');
+    }
+
+    const existingProperty = await this.prisma.building.count({
+      where: { hotelId: dto.hotelId, deletedAt: null },
+    });
+    if (existingProperty > 0) {
+      throw new BadRequestException('Property structure already configured for this hotel');
+    }
+
+    const roomTypeCodes = dto.roomTypes.map((rt) => rt.code);
+    if (new Set(roomTypeCodes).size !== roomTypeCodes.length) {
+      throw new BadRequestException('Duplicate room type codes');
+    }
+
+    const allRoomNumbers = dto.buildings.flatMap((b) =>
+      b.floors.flatMap((f) => f.rooms.map((r) => r.roomNumber)),
+    );
+    if (new Set(allRoomNumbers).size !== allRoomNumbers.length) {
+      throw new BadRequestException('Duplicate room numbers');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const roomTypeIdByCode = new Map<string, string>();
+
+      for (const roomType of dto.roomTypes) {
+        const { amenityIds, ...data } = roomType;
+        const created = await tx.roomType.create({
+          data: { hotelId: dto.hotelId, ...data },
+        });
+        roomTypeIdByCode.set(roomType.code, created.id);
+
+        if (amenityIds?.length) {
+          await tx.roomTypeAmenity.createMany({
+            data: amenityIds.map((amenityId) => ({
+              hotelId: dto.hotelId,
+              roomTypeId: created.id,
+              amenityId,
+            })),
+          });
+        }
+      }
+
+      for (const building of dto.buildings) {
+        const { floors, ...buildingData } = building;
+        const createdBuilding = await tx.building.create({
+          data: { hotelId: dto.hotelId, ...buildingData },
+        });
+
+        for (const floor of floors) {
+          const { rooms, ...floorData } = floor;
+          const createdFloor = await tx.floor.create({
+            data: {
+              hotelId: dto.hotelId,
+              buildingId: createdBuilding.id,
+              ...floorData,
+            },
+          });
+
+          for (const room of rooms) {
+            const roomTypeId = roomTypeIdByCode.get(room.roomTypeCode);
+            if (!roomTypeId) {
+              throw new BadRequestException(`Unknown room type code: ${room.roomTypeCode}`);
+            }
+
+            const { roomTypeCode: _roomTypeCode, ...roomData } = room;
+            await tx.room.create({
+              data: {
+                hotelId: dto.hotelId,
+                floorId: createdFloor.id,
+                roomTypeId,
+                ...roomData,
+              },
+            });
+          }
+        }
+      }
+    });
+
+    return { hotelId: dto.hotelId };
+  }
+
   async registerOwner(dto: RegisterOwnerDto): Promise<{ userId: string }> {
     if (dto.password !== dto.confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }
     this.passwordService.validatePolicy(dto.password);
 
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email.toLowerCase() } });
+    const hotel = await this.prisma.hotel.findFirst({
+      where: { id: dto.hotelId, deletedAt: null },
+    });
+    if (!hotel) {
+      throw new BadRequestException('Hotel not found');
+    }
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
     if (existing) {
       throw new BadRequestException('Email already registered');
     }
@@ -177,12 +274,38 @@ export class AuthService {
 
     if (ownerRole) {
       await this.prisma.userRole.create({
-        data: { userId: user.id, roleId: ownerRole.id },
+        data: { userId: user.id, roleId: ownerRole.id, hotelId: dto.hotelId },
+      });
+    }
+
+    const roomCount = await this.prisma.room.count({
+      where: { hotelId: dto.hotelId, deletedAt: null, isActive: true },
+    });
+    if (roomCount > 0) {
+      await this.prisma.hotel.update({
+        where: { id: dto.hotelId },
+        data: { status: 'ACTIVE' },
       });
     }
 
     // Email verification token dispatched via notifications module
     return { userId: user.id };
+  }
+
+  async createRole(dto: CreateRoleDto) {
+    return this.prisma.role.create({ data: dto });
+  }
+
+  async createPermission(dto: CreatePermissionDto) {
+    return this.prisma.permission.create({ data: dto });
+  }
+
+  async createRolePermission(dto: CreateRolePermissionDto) {
+    return this.prisma.rolePermission.create({ data: dto });
+  }
+
+  async createUserRole(dto: CreateUserRoleDto) {
+    return this.prisma.userRole.create({ data: dto });
   }
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
@@ -343,15 +466,13 @@ export class AuthService {
       role: { code: string; rolePermissions?: Array<{ permission: { key: string } }> };
     }>;
   }) {
-    const roles = user.isSuperAdmin
-      ? ['SUPER_ADMIN']
-      : user.userRoles.map((ur) => ur.role.code);
+    const roles = user.isSuperAdmin ? ['SUPER_ADMIN'] : user.userRoles.map((ur) => ur.role.code);
 
     const permissions = user.userRoles.flatMap(
       (ur) => ur.role.rolePermissions?.map((rp) => rp.permission.key) ?? [],
     );
 
-    const hotelId = user.isSuperAdmin ? null : (user.userRoles.find((ur) => ur.hotelId)?.hotelId ?? null);
+    const hotelId = user.userRoles.find((ur) => ur.hotelId)?.hotelId ?? null;
 
     return {
       sub: user.id as AuthUser['id'],
