@@ -37,7 +37,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 USER nestjs
 EXPOSE 4000
