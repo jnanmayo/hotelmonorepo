@@ -50,7 +50,7 @@ export const authService = {
   async logout(): Promise<void> {
     try {
       // await apiClient.post('/auth/logout');
-      console.log(useAuthStore)
+      console.log(useAuthStore);
     } finally {
       clearAuthCookies();
       useAuthStore.getState().clearSession();
@@ -117,6 +117,7 @@ export const authService = {
   },
 
   async registerOwner(data: RegisterOwnerInput): Promise<{ userId: string }> {
+    console.log('cs');
     const response = await apiClient.post<{ data: { userId: string } }>(
       '/auth/register/owner',
       data,

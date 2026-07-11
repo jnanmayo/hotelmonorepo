@@ -29,7 +29,9 @@ type Step = 'hotel' | 'property' | 'owner';
 
 const defaultPropertyValues: RegisterHotelPropertyInput = {
   hotelId: '',
-  roomTypes: [{ name: 'Standard', code: 'STD', baseRate: 0, maxOccupancy: 2, maxAdults: 2, maxChildren: 0 }],
+  roomTypes: [
+    { name: 'Standard', code: 'STD', baseRate: 0, maxOccupancy: 2, maxAdults: 2, maxChildren: 0 },
+  ],
   buildings: [
     {
       name: 'Main Building',
@@ -38,7 +40,15 @@ const defaultPropertyValues: RegisterHotelPropertyInput = {
         {
           name: 'Ground Floor',
           floorNumber: 0,
-          rooms: [{ roomNumber: '101', roomTypeCode: 'STD', category: 'STANDARD', isSmoking: false, isAccessible: false }],
+          rooms: [
+            {
+              roomNumber: '101',
+              roomTypeCode: 'STD',
+              category: 'STANDARD',
+              isSmoking: false,
+              isAccessible: false,
+            },
+          ],
         },
       ],
     },
@@ -79,6 +89,7 @@ export function RegisterForm() {
   });
 
   const onHotelSubmit = async (data: RegisterHotelInput) => {
+    console.log('submit');
     setError(null);
     try {
       const result = await registerHotel(data);
@@ -93,9 +104,14 @@ export function RegisterForm() {
 
   const onPropertySubmit = async (data: RegisterHotelPropertyInput) => {
     setError(null);
+    if (!hotelId) {
+      setError('Hotel ID missing. Please start again.');
+      return;
+    }
     try {
       await registerHotelProperty(data);
       toast.success('Property structure saved.');
+      ownerForm.setValue('hotelId', hotelId);
       setStep('owner');
     } catch {
       setError('Unable to save property structure. Check room type codes and room numbers.');
@@ -104,28 +120,43 @@ export function RegisterForm() {
 
   const onPropertySkip = () => {
     setError(null);
+    if (!hotelId) {
+      setError('Hotel ID missing. Please start again.');
+      return;
+    }
+    ownerForm.setValue('hotelId', hotelId);
     setStep('owner');
   };
 
   const onOwnerSubmit = async (data: RegisterOwnerInput) => {
+    console.log(hotelId);
     if (!hotelId) {
       setError('Hotel registration is incomplete. Please start again.');
       return;
     }
     setError(null);
     try {
+      console.log('here');
       await registerOwner({ ...data, hotelId });
       toast.success('Registration complete. Verify your email to continue.');
       router.push(`${AUTH_ROUTES.verifyEmail}?registered=1`);
-    } catch {
+    } catch (err) {
+      console.error('Owner registration failed:', err);
       setError('Unable to complete registration. Please try again.');
     }
   };
 
-  const roomTypeCodes = propertyForm.watch('roomTypes').map((rt) => rt.code).filter(Boolean);
+  const roomTypeCodes = propertyForm
+    .watch('roomTypes')
+    .map((rt) => rt.code)
+    .filter(Boolean);
 
   const stepTitle =
-    step === 'hotel' ? 'Register Your Hotel' : step === 'property' ? 'Property Setup' : 'Create Owner Account';
+    step === 'hotel'
+      ? 'Register Your Hotel'
+      : step === 'property'
+        ? 'Property Setup'
+        : 'Create Owner Account';
   const stepDescription =
     step === 'hotel'
       ? 'Step 1 of 3 — Hotel details'
@@ -140,7 +171,10 @@ export function RegisterForm() {
       footer={
         <p className="text-muted-foreground">
           Already registered?{' '}
-          <Link href={AUTH_ROUTES.login} className="font-medium text-tunga-navy hover:text-tunga-gold">
+          <Link
+            href={AUTH_ROUTES.login}
+            className="text-tunga-navy hover:text-tunga-gold font-medium"
+          >
             Sign in
           </Link>
         </p>
@@ -175,11 +209,19 @@ export function RegisterForm() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="city">City</Label>
-              <Input id="city" error={hotelForm.formState.errors.city?.message} {...hotelForm.register('city')} />
+              <Input
+                id="city"
+                error={hotelForm.formState.errors.city?.message}
+                {...hotelForm.register('city')}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" error={hotelForm.formState.errors.phone?.message} {...hotelForm.register('phone')} />
+              <Input
+                id="phone"
+                error={hotelForm.formState.errors.phone?.message}
+                {...hotelForm.register('phone')}
+              />
             </div>
           </div>
           <div className="space-y-2">
@@ -191,7 +233,12 @@ export function RegisterForm() {
               {...hotelForm.register('email')}
             />
           </div>
-          <Button type="submit" className="w-full" size="lg" isLoading={hotelForm.formState.isSubmitting}>
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            isLoading={hotelForm.formState.isSubmitting}
+          >
             Continue
           </Button>
         </form>
@@ -206,7 +253,16 @@ export function RegisterForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendRoomType({ name: '', code: '', baseRate: 0, maxOccupancy: 2, maxAdults: 2, maxChildren: 0 })}
+                onClick={() =>
+                  appendRoomType({
+                    name: '',
+                    code: '',
+                    baseRate: 0,
+                    maxOccupancy: 2,
+                    maxAdults: 2,
+                    maxChildren: 0,
+                  })
+                }
               >
                 Add Type
               </Button>
@@ -223,10 +279,18 @@ export function RegisterForm() {
                 <Input
                   type="number"
                   placeholder="Max occupancy"
-                  {...propertyForm.register(`roomTypes.${index}.maxOccupancy`, { valueAsNumber: true })}
+                  {...propertyForm.register(`roomTypes.${index}.maxOccupancy`, {
+                    valueAsNumber: true,
+                  })}
                 />
                 {roomTypeFields.length > 1 && (
-                  <Button type="button" variant="ghost" size="sm" className="col-span-2" onClick={() => removeRoomType(index)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="col-span-2"
+                    onClick={() => removeRoomType(index)}
+                  >
                     Remove type
                   </Button>
                 )}
@@ -253,7 +317,15 @@ export function RegisterForm() {
                   appendFloor({
                     name: `Floor ${floorFields.length + 1}`,
                     floorNumber: floorFields.length + 1,
-                    rooms: [{ roomNumber: '', roomTypeCode: roomTypeCodes[0] ?? '', category: 'STANDARD', isSmoking: false, isAccessible: false }],
+                    rooms: [
+                      {
+                        roomNumber: '',
+                        roomTypeCode: roomTypeCodes[0] ?? '',
+                        category: 'STANDARD',
+                        isSmoking: false,
+                        isAccessible: false,
+                      },
+                    ],
                   })
                 }
               >
@@ -263,11 +335,16 @@ export function RegisterForm() {
             {floorFields.map((floor, floorIndex) => (
               <div key={floor.id} className="space-y-2 rounded-lg border p-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <Input placeholder="Floor name" {...propertyForm.register(`buildings.0.floors.${floorIndex}.name`)} />
+                  <Input
+                    placeholder="Floor name"
+                    {...propertyForm.register(`buildings.0.floors.${floorIndex}.name`)}
+                  />
                   <Input
                     type="number"
                     placeholder="Floor number"
-                    {...propertyForm.register(`buildings.0.floors.${floorIndex}.floorNumber`, { valueAsNumber: true })}
+                    {...propertyForm.register(`buildings.0.floors.${floorIndex}.floorNumber`, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
                 <Input
@@ -275,8 +352,10 @@ export function RegisterForm() {
                   {...propertyForm.register(`buildings.0.floors.${floorIndex}.rooms.0.roomNumber`)}
                 />
                 <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  {...propertyForm.register(`buildings.0.floors.${floorIndex}.rooms.0.roomTypeCode`)}
+                  className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
+                  {...propertyForm.register(
+                    `buildings.0.floors.${floorIndex}.rooms.0.roomTypeCode`,
+                  )}
                 >
                   {roomTypeCodes.map((code) => (
                     <option key={code} value={code}>
@@ -285,7 +364,12 @@ export function RegisterForm() {
                   ))}
                 </select>
                 {floorFields.length > 1 && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeFloor(floorIndex)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFloor(floorIndex)}
+                  >
                     Remove floor
                   </Button>
                 )}
@@ -300,13 +384,28 @@ export function RegisterForm() {
             <Button type="button" variant="ghost" onClick={onPropertySkip}>
               Skip for now
             </Button>
-            <Button type="submit" className="flex-1" size="lg" isLoading={propertyForm.formState.isSubmitting}>
+            <Button
+              type="submit"
+              className="flex-1"
+              size="lg"
+              isLoading={propertyForm.formState.isSubmitting}
+            >
               Continue
             </Button>
           </div>
         </form>
       ) : (
-        <form onSubmit={ownerForm.handleSubmit(onOwnerSubmit)} className="space-y-4">
+        <form
+          onSubmit={ownerForm.handleSubmit(onOwnerSubmit, (errors) => {
+            console.log(hotelId);
+            console.error('Validation errors:', errors);
+            // Optionally scroll to the first error
+            const firstError = Object.keys(errors)[0];
+            const element = document.querySelector(`[name="${firstError}"]`);
+            if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          })}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -358,17 +457,28 @@ export function RegisterForm() {
             value={ownerForm.watch('confirmPassword') ?? ''}
           />
           <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" className="mt-1 rounded" {...ownerForm.register('acceptTerms')} />
+            <input
+              type="checkbox"
+              className="mt-1 rounded"
+              {...ownerForm.register('acceptTerms')}
+            />
             <span>I accept the Terms of Service and Privacy Policy</span>
           </label>
           {ownerForm.formState.errors.acceptTerms && (
-            <p className="text-xs text-destructive">{ownerForm.formState.errors.acceptTerms.message}</p>
+            <p className="text-destructive text-xs">
+              {ownerForm.formState.errors.acceptTerms.message}
+            </p>
           )}
           <div className="flex gap-3">
             <Button type="button" variant="outline" onClick={() => setStep('property')}>
               Back
             </Button>
-            <Button type="submit" className="flex-1" size="lg" isLoading={ownerForm.formState.isSubmitting}>
+            <Button
+              type="submit"
+              className="flex-1"
+              size="lg"
+              isLoading={ownerForm.formState.isSubmitting}
+            >
               Complete Registration
             </Button>
           </div>

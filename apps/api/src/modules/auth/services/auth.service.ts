@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { PrismaService } from '@/infrastructure/database/prisma.service';
@@ -21,6 +17,10 @@ import { TokenService } from '@/modules/auth/services/token.service';
 
 import { AUTH_DEFAULTS, type AuthUser, type LoginResponse } from '@tungaos/shared';
 import type { RegisterHotelPropertyInput } from '@tungaos/shared';
+import { CreateRoleDto } from '@/modules/auth/dto/create-role.dto';
+import { CreatePermissionDto } from '@/modules/auth/dto/create-permission.dto';
+import { CreateRolePermissionDto } from '@/modules/auth/dto/create-role-permission.dto';
+import { CreateUserRoleDto } from '@/modules/auth/dto/create-user-role.dto';
 
 @Injectable()
 export class AuthService {
@@ -55,7 +55,7 @@ export class AuthService {
         },
       },
     });
-
+    console.log(user);
     if (!user?.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -250,7 +250,9 @@ export class AuthService {
       throw new BadRequestException('Hotel not found');
     }
 
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email.toLowerCase() } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
     if (existing) {
       throw new BadRequestException('Email already registered');
     }
@@ -288,6 +290,22 @@ export class AuthService {
 
     // Email verification token dispatched via notifications module
     return { userId: user.id };
+  }
+
+  async createRole(dto: CreateRoleDto) {
+    return this.prisma.role.create({ data: dto });
+  }
+
+  async createPermission(dto: CreatePermissionDto) {
+    return this.prisma.permission.create({ data: dto });
+  }
+
+  async createRolePermission(dto: CreateRolePermissionDto) {
+    return this.prisma.rolePermission.create({ data: dto });
+  }
+
+  async createUserRole(dto: CreateUserRoleDto) {
+    return this.prisma.userRole.create({ data: dto });
   }
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
@@ -448,15 +466,13 @@ export class AuthService {
       role: { code: string; rolePermissions?: Array<{ permission: { key: string } }> };
     }>;
   }) {
-    const roles = user.isSuperAdmin
-      ? ['SUPER_ADMIN']
-      : user.userRoles.map((ur) => ur.role.code);
+    const roles = user.isSuperAdmin ? ['SUPER_ADMIN'] : user.userRoles.map((ur) => ur.role.code);
 
     const permissions = user.userRoles.flatMap(
       (ur) => ur.role.rolePermissions?.map((rp) => rp.permission.key) ?? [],
     );
 
-    const hotelId = user.isSuperAdmin ? null : (user.userRoles.find((ur) => ur.hotelId)?.hotelId ?? null);
+    const hotelId = user.userRoles.find((ur) => ur.hotelId)?.hotelId ?? null;
 
     return {
       sub: user.id as AuthUser['id'],

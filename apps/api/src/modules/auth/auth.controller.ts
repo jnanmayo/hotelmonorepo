@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
@@ -31,6 +22,10 @@ import { AuthService } from '@/modules/auth/services/auth.service';
 import type { JwtPayload } from '@tungaos/shared';
 import type { RegisterHotelPropertyInput } from '@tungaos/shared';
 import type { Request } from 'express';
+import { CreateRoleDto } from '@/modules/auth/dto/create-role.dto';
+import { CreatePermissionDto } from '@/modules/auth/dto/create-permission.dto';
+import { CreateRolePermissionDto } from '@/modules/auth/dto/create-role-permission.dto';
+import { CreateUserRoleDto } from '@/modules/auth/dto/create-user-role.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -42,11 +37,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
-    const data = await this.authService.login(
-      dto,
-      req.ip,
-      req.headers['user-agent'],
-    );
+    const data = await this.authService.login(dto, req.ip, req.headers['user-agent']);
     return { success: true, data, timestamp: new Date().toISOString() };
   }
 
@@ -96,12 +87,44 @@ export class AuthController {
   }
 
   @Public()
+  @Post('roles')
+  async createRole(@Body() dto: CreateRoleDto) {
+    const data = await this.authService.createRole(dto);
+    return { success: true, data };
+  }
+
+  @Public()
+  @Post('permissions')
+  async createPermission(@Body() dto: CreatePermissionDto) {
+    const data = await this.authService.createPermission(dto);
+    return { success: true, data };
+  }
+
+  @Public()
+  @Post('role-permissions')
+  async createRolePermission(@Body() dto: CreateRolePermissionDto) {
+    const data = await this.authService.createRolePermission(dto);
+    return { success: true, data };
+  }
+
+  @Public()
+  @Post('user-roles')
+  async createUserRole(@Body() dto: CreateUserRoleDto) {
+    const data = await this.authService.createUserRole(dto);
+    return { success: true, data };
+  }
+
+  @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     await this.authService.forgotPassword(dto);
-    return { success: true, message: 'If the email exists, instructions were sent', timestamp: new Date().toISOString() };
+    return {
+      success: true,
+      message: 'If the email exists, instructions were sent',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Public()
