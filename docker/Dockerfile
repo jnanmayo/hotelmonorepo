@@ -22,7 +22,7 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
 RUN pnpm --filter @tungaos/shared build
-RUN pnpm --filter @tungaos/api prisma generate
+RUN pnpm --filter @tungaos/api run prisma:generate
 RUN pnpm --filter @tungaos/api build
 
 # --- Production ---
@@ -33,10 +33,9 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
+COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 USER nestjs
 EXPOSE 4000
