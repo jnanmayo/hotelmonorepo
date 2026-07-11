@@ -1,11 +1,3 @@
 {
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm turbo build --filter=@tungaos/web",
-  "outputDirectory": "apps/web/.next",
-  "builds": [
-    {
-      "src": "apps/web/package.json",
-      "use": "@vercel/next"
-    }
-  ]
+  "installCommand": "pnpm install"
 }
