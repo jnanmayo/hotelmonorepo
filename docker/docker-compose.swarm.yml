@@ -25,6 +25,8 @@ services:
 
   api:
     image: tungaos-api:latest
+    environment:
+      - NODE_PATH=/app/apps/api/node_modules
     env_file:
       - ../apps/api/.env
     expose:
