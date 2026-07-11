@@ -6,6 +6,7 @@
 export * from './common.schemas.js';
 export { passwordSchema } from './auth.schemas.js';
 export * from './auth.schemas.js';
+export * from './hotel-property.schemas.js';
 export * from './booking.schemas.js';
 export * from './pms.schemas.js';
 export * from './front-desk.schemas.js';

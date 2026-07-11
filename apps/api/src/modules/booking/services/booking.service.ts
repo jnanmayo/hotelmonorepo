@@ -81,13 +81,18 @@ export class BookingService {
       where: { id: roomTypeId, hotelId: hotel.id, isActive: true },
       include: {
         amenities: { include: { amenity: true } },
-        images: { include: { file: true }, orderBy: { sortOrder: 'asc' } },
         cmsWebsiteRooms: { where: { deletedAt: null }, take: 1 },
       },
     });
     if (!roomType) throw new NotFoundException('Room not found');
 
     const cms = roomType.cmsWebsiteRooms[0];
+    const roomImages = await this.prisma.roomImage.findMany({
+      where: { hotelId: hotel.id, room: { roomTypeId }, isActive: true, deletedAt: null },
+      include: { file: true },
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
+      take: 10,
+    });
     const availableCount = await this.availability.getAvailableCount(
       hotel.id,
       roomTypeId,
@@ -111,7 +116,7 @@ export class BookingService {
       name: cms?.name ?? roomType.name,
       description: cms?.description ?? roomType.description,
       shortDescription: cms?.shortDescription,
-      images: cms?.images ?? roomType.images.map((i) => ({ url: i.file.fileUrl })),
+      images: cms?.images ?? roomImages.map((i) => ({ url: i.file.fileUrl })),
       images360: cms?.images360 ?? [],
       virtualTourUrl: cms?.virtualTourUrl,
       amenities: roomType.amenities.map((a) => a.amenity.name),
