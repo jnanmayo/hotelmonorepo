@@ -7,6 +7,12 @@ node_modules
 .next
 **/.next
 
+apps/web
+apps/web/
+
+docs
+README.md
+
 dist
 **/dist
 
@@ -24,6 +30,10 @@ coverage
 
 *.log
 
+scripts
+*.ps1
+*.sh
+
 Dockerfile
 docker-compose.yml
 
@@ -32,4 +42,7 @@ docker-compose.yml
 tmp
 temp
 
+*.tsbuildinfo
+
+.turbo
 *.tsbuildinfo
