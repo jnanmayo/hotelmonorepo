@@ -6,7 +6,11 @@ import { PmsAuditService } from '@/modules/pms/services/pms-audit.service';
 import { PmsDashboardService } from '@/modules/pms/services/pms-dashboard.service';
 import { PmsRealtimeGateway } from '@/modules/pms/gateways/pms-realtime.gateway';
 
-import type { CreatePmsReservationInput, PmsReservationDetail, PmsRoomStatus } from '@tungaos/shared';
+import type {
+  CreatePmsReservationInput,
+  PmsReservationDetail,
+  PmsRoomStatus,
+} from '@tungaos/shared';
 
 const RESERVATION_INCLUDE = {
   guest: true,
@@ -106,6 +110,9 @@ export class PmsReservationService {
     const checkIn = new Date(input.checkInDate);
     const checkOut = new Date(input.checkOutDate);
     if (checkOut <= checkIn) throw new BadRequestException('Check-out must be after check-in');
+    console.log(hotelId);
+    const hotel = await this.prisma.hotel.findUnique({ where: { id: hotelId } });
+    if (!hotel) throw new BadRequestException('Invalid hotel ID');
 
     let guestId = input.guestId;
     if (!guestId && input.guest) {
@@ -201,7 +208,10 @@ export class PmsReservationService {
   async update(
     hotelId: string,
     id: string,
-    data: Partial<CreatePmsReservationInput> & { status?: ReservationStatus; changeReason?: string },
+    data: Partial<CreatePmsReservationInput> & {
+      status?: ReservationStatus;
+      changeReason?: string;
+    },
     userId?: string,
   ) {
     const existing = await this.prisma.reservation.findFirst({
@@ -261,7 +271,12 @@ export class PmsReservationService {
   }
 
   async cancel(hotelId: string, id: string, reason: string, userId?: string) {
-    return this.update(hotelId, id, { status: ReservationStatus.CANCELLED, changeReason: reason }, userId);
+    return this.update(
+      hotelId,
+      id,
+      { status: ReservationStatus.CANCELLED, changeReason: reason },
+      userId,
+    );
   }
 
   async duplicate(hotelId: string, id: string, userId?: string) {
@@ -357,11 +372,30 @@ export class PmsReservationService {
     internalNotes: string | null;
     isGuaranteed: boolean;
     totalAmount: unknown;
-    guest: { id: string; firstName: string; lastName: string; email: string | null; phone: string | null; vipStatus: boolean };
+    guest: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      phone: string | null;
+      vipStatus: boolean;
+    };
     roomType: { id: string; name: string; code: string };
     room: { id: string; roomNumber: string; status: string } | null;
-    history: { id: string; fromStatus: ReservationStatus | null; toStatus: ReservationStatus; changeReason: string | null; createdAt: Date }[];
-    bookingEvents: { id: string; eventType: string; description: string | null; createdAt: Date; metadata: unknown }[];
+    history: {
+      id: string;
+      fromStatus: ReservationStatus | null;
+      toStatus: ReservationStatus;
+      changeReason: string | null;
+      createdAt: Date;
+    }[];
+    bookingEvents: {
+      id: string;
+      eventType: string;
+      description: string | null;
+      createdAt: Date;
+      metadata: unknown;
+    }[];
   }): PmsReservationDetail {
     return {
       ...this.mapSummary(r),

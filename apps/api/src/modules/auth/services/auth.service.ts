@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { PrismaService } from '@/infrastructure/database/prisma.service';
@@ -21,6 +26,7 @@ import { CreateRoleDto } from '@/modules/auth/dto/create-role.dto';
 import { CreatePermissionDto } from '@/modules/auth/dto/create-permission.dto';
 import { CreateRolePermissionDto } from '@/modules/auth/dto/create-role-permission.dto';
 import { CreateUserRoleDto } from '@/modules/auth/dto/create-user-role.dto';
+import { CreateUserDto } from '@/modules/auth/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -55,7 +61,7 @@ export class AuthService {
         },
       },
     });
-    console.log(user);
+
     if (!user?.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -290,6 +296,27 @@ export class AuthService {
 
     // Email verification token dispatched via notifications module
     return { userId: user.id };
+  }
+  async createUser(dto: CreateUserDto) {
+    const { email, password, ...rest } = dto;
+
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const passwordHash = await this.passwordService.hash(password);
+
+    return this.prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        ...rest,
+        isEmailVerified: true, // default
+        isSuperAdmin: false, // default
+        isActive: true, // default
+      },
+    });
   }
 
   async createRole(dto: CreateRoleDto) {

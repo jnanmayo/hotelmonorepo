@@ -26,6 +26,7 @@ import { CreateRoleDto } from '@/modules/auth/dto/create-role.dto';
 import { CreatePermissionDto } from '@/modules/auth/dto/create-permission.dto';
 import { CreateRolePermissionDto } from '@/modules/auth/dto/create-role-permission.dto';
 import { CreateUserRoleDto } from '@/modules/auth/dto/create-user-role.dto';
+import { CreateUserDto } from '@/modules/auth/dto/create-user.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -84,6 +85,14 @@ export class AuthController {
   async registerOwner(@Body() dto: RegisterOwnerDto) {
     const data = await this.authService.registerOwner(dto);
     return { success: true, data, timestamp: new Date().toISOString() };
+  }
+  @Public()
+  @Post('register')
+  async register(@Body() dto: CreateUserDto) {
+    const user = await this.authService.createUser(dto);
+    // Omit password hash from response
+    const { passwordHash, ...result } = user;
+    return { success: true, data: result };
   }
 
   @Public()

@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ReservationStatus, RoomStatus } from '@prisma/client';
 
@@ -19,7 +10,11 @@ import { PmsCheckInService } from '@/modules/pms/services/pms-checkin.service';
 import { PmsCheckOutService } from '@/modules/pms/services/pms-checkout.service';
 import { PmsDashboardService } from '@/modules/pms/services/pms-dashboard.service';
 import { PmsGuestService } from '@/modules/pms/services/pms-guest.service';
-import { PmsNightAuditService, PmsReportService, PmsSearchService } from '@/modules/pms/services/pms-report.service';
+import {
+  PmsNightAuditService,
+  PmsReportService,
+  PmsSearchService,
+} from '@/modules/pms/services/pms-report.service';
 import { PmsReservationService } from '@/modules/pms/services/pms-reservation.service';
 import { PmsRoomService } from '@/modules/pms/services/pms-room.service';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
@@ -92,7 +87,8 @@ export class PmsController {
     @Query('checkInTo') checkInTo?: string,
   ) {
     const hotelId = this.hotelId(user);
-    if (!hotelId) return { data: { items: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } } };
+    if (!hotelId)
+      return { data: { items: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } } };
     return {
       data: await this.reservations.list(hotelId, {
         page: Number(page ?? 1),
@@ -115,7 +111,10 @@ export class PmsController {
 
   @Post('reservations')
   @RequirePermissions('reservations:booking:create')
-  async createReservation(@CurrentUser() user: JwtPayload, @Body() body: CreatePmsReservationSchema) {
+  async createReservation(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: CreatePmsReservationSchema,
+  ) {
     const hotelId = this.hotelId(user);
     if (!hotelId) return { data: null };
     return { data: await this.reservations.create(hotelId, body, user.sub) };
@@ -272,7 +271,10 @@ export class PmsController {
 
   @Post('check-in/:reservationId/start')
   @RequirePermissions('reservations:booking:update')
-  async startCheckIn(@CurrentUser() user: JwtPayload, @Param('reservationId') reservationId: string) {
+  async startCheckIn(
+    @CurrentUser() user: JwtPayload,
+    @Param('reservationId') reservationId: string,
+  ) {
     const hotelId = this.hotelId(user);
     if (!hotelId) return { data: null };
     return { data: await this.checkIn.start(hotelId, reservationId, user.sub) };
@@ -300,7 +302,10 @@ export class PmsController {
 
   @Get('check-out/:reservationId')
   @RequirePermissions('reservations:booking:read')
-  async getCheckOut(@CurrentUser() user: JwtPayload, @Param('reservationId') reservationId: string) {
+  async getCheckOut(
+    @CurrentUser() user: JwtPayload,
+    @Param('reservationId') reservationId: string,
+  ) {
     const hotelId = this.hotelId(user);
     if (!hotelId) return { data: null };
     return { data: await this.checkOut.getWorkflow(hotelId, reservationId) };
@@ -330,7 +335,8 @@ export class PmsController {
   @RequirePermissions('finance:ledger:create')
   async restaurantCharge(
     @CurrentUser() user: JwtPayload,
-    @Body() body: { reservationId: string; amount: number; description: string; sourceRef?: string },
+    @Body()
+    body: { reservationId: string; amount: number; description: string; sourceRef?: string },
   ) {
     const hotelId = this.hotelId(user);
     if (!hotelId) return { data: null };
@@ -348,7 +354,7 @@ export class PmsController {
   // ─── Calendar ────────────────────────────────────────────────────────────
 
   @Get('calendar')
-  @RequirePermissions('reservations:booking:read')
+  @RequirePermissions('reservations:booking:read', 'frontdesk:operations:read')
   async getCalendar(
     @CurrentUser() user: JwtPayload,
     @Query('start') start: string,
@@ -409,10 +415,7 @@ export class PmsController {
 
   @Post('night-audit/run')
   @RequirePermissions('finance:ledger:manage')
-  async runNightAudit(
-    @CurrentUser() user: JwtPayload,
-    @Body('auditDate') auditDate: string,
-  ) {
+  async runNightAudit(@CurrentUser() user: JwtPayload, @Body('auditDate') auditDate: string) {
     const hotelId = this.hotelId(user);
     if (!hotelId) return { data: null };
     const date = auditDate ?? new Date().toISOString().split('T')[0]!;
@@ -469,6 +472,8 @@ export class PmsController {
       }),
       this.prisma.invoice.count({ where: { hotelId, deletedAt: null } }),
     ]);
-    return { data: { items, meta: { page: p, limit: l, total, totalPages: Math.ceil(total / l) } } };
+    return {
+      data: { items, meta: { page: p, limit: l, total, totalPages: Math.ceil(total / l) } },
+    };
   }
 }

@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  Star,
-} from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Menu, Star } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -59,7 +53,7 @@ function NavLink({
             )}
           >
             {isActive && (
-              <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-secondary" />
+              <span className="bg-secondary absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full" />
             )}
             <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
             <span className="flex-1 truncate text-left">{item.label}</span>
@@ -82,7 +76,7 @@ function NavLink({
             )}
           >
             {isActive && !collapsed && (
-              <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-secondary" />
+              <span className="bg-secondary absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full" />
             )}
             <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
             {!collapsed && (
@@ -99,10 +93,12 @@ function NavLink({
                     e.preventDefault();
                     toggleFavorite(item.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 hover:opacity-100"
+                  className="opacity-0 hover:opacity-100 group-hover:opacity-100"
                   aria-label="Toggle favorite"
                 >
-                  <Star className={cn('h-3.5 w-3.5', isFavorite && 'fill-secondary text-secondary')} />
+                  <Star
+                    className={cn('h-3.5 w-3.5', isFavorite && 'fill-secondary text-secondary')}
+                  />
                 </button>
               </>
             )}
@@ -138,13 +134,24 @@ function NavLink({
   return <div className="group">{content}</div>;
 }
 
-function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+function SidebarContent({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
   const items = useNavigation();
   const toggleSidebar = useShellStore((s) => s.toggleSidebar);
 
   return (
     <>
-      <div className={cn('flex h-16 items-center border-b border-sidebar-border px-4', collapsed && 'justify-center')}>
+      <div
+        className={cn(
+          'border-sidebar-border flex h-16 items-center border-b px-4',
+          collapsed && 'justify-center',
+        )}
+      >
         <Logo variant={collapsed ? 'mark' : 'full'} size="sm" inverted showVendor={!collapsed} />
       </div>
       <ScrollArea className="flex-1 py-4">
@@ -154,12 +161,12 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
           ))}
         </nav>
       </ScrollArea>
-      <div className="border-t border-sidebar-border p-3">
+      <div className="border-sidebar-border border-t p-3">
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={toggleSidebar}
-          className="hidden w-full text-sidebar-foreground/80 hover:bg-white/5 hover:text-white lg:flex"
+          className="text-sidebar-foreground/80 hidden w-full hover:bg-white/5 hover:text-white lg:flex"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -179,7 +186,12 @@ export function AppSidebar() {
     <TooltipProvider delayDuration={0}>
       {/* Mobile menu button rendered in navbar; sidebar as sheet */}
       {!isDesktop && (
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen} side="left" className="bg-sidebar text-sidebar-foreground lg:hidden">
+        <Sheet
+          open={mobileOpen}
+          onOpenChange={setMobileOpen}
+          side="left"
+          className="bg-sidebar text-sidebar-foreground lg:hidden"
+        >
           <div className="flex h-full flex-col">
             <SidebarContent collapsed={false} onNavigate={() => setMobileOpen(false)} />
           </div>
@@ -190,7 +202,7 @@ export function AppSidebar() {
         <motion.aside
           animate={{ width: collapsed ? 72 : 256 }}
           transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-          className="relative hidden h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex"
+          className="bg-sidebar text-sidebar-foreground relative hidden h-full shrink-0 flex-col lg:flex"
         >
           <SidebarContent collapsed={collapsed} />
         </motion.aside>

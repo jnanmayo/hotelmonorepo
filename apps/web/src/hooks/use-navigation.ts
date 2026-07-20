@@ -2,48 +2,61 @@
 
 import { useMemo } from 'react';
 
-import { APP_NAVIGATION, flattenNavigation, type AppRole, type NavItem } from '@/constants/navigation';
+import {
+  APP_NAVIGATION,
+  flattenNavigation,
+  type AppRole,
+  type NavItem,
+} from '@/constants/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 
-function filterByRoleAndPermission(
+function filterByRole(
   items: NavItem[],
   roles: string[],
-  permissions: string[],
   isSuperAdmin: boolean,
+  isChild: boolean = false,
 ): NavItem[] {
   return items
     .filter((item) => {
       if (isSuperAdmin) return true;
-      if (item.roles && !item.roles.some((r) => roles.includes(r))) return false;
-      if (item.permission && !permissions.includes(item.permission) && !permissions.includes('dashboard:overview:read')) {
-        if (item.permission && permissions.length > 0 && !permissions.includes(item.permission)) {
-          return false;
-        }
-      }
+      // Children inherit parent access — no need for their own role check
+      if (isChild) return true;
+      // Top-level items: must have roles that match the user
+      if (!item.roles) return false;
+      if (!item.roles.some((r) => roles.includes(r))) return false;
       return true;
     })
     .map((item) => ({
       ...item,
-      children: item.children
-        ? filterByRoleAndPermission(item.children, roles, permissions, isSuperAdmin)
-        : undefined,
+      children: item.children ? filterByRole(item.children, roles, isSuperAdmin, true) : undefined,
     }))
     .filter((item) => !item.children || item.children.length > 0);
 }
+export function getDefaultRouteForRoles(roles: string[]): string | null {
+  const isSuperAdmin = roles.includes('SUPER_ADMIN');
 
+  for (const item of APP_NAVIGATION) {
+    if (isSuperAdmin) {
+      if (item.href) return item.href;
+      continue;
+    }
+
+    if (item.roles && item.roles.some((r) => roles.includes(r))) {
+      if (item.href) return item.href;
+    }
+  }
+
+  const fallback = APP_NAVIGATION.find((item) => item.href);
+  return fallback?.href ?? null;
+}
 export function useNavigation(roleOverride?: AppRole) {
   const user = useAuthStore((s) => s.user);
 
   return useMemo(() => {
     const roles = roleOverride ? [roleOverride] : (user?.roles ?? ['HOTEL_OWNER']);
-    const permissions = user?.permissions ?? [];
     const isSuperAdmin = roles.includes('SUPER_ADMIN') || user?.roles?.includes('SUPER_ADMIN');
 
-    if (!user?.permissions?.length) {
-      return APP_NAVIGATION;
-    }
-
-    return filterByRoleAndPermission(APP_NAVIGATION, roles, permissions, !!isSuperAdmin);
+    return filterByRole(APP_NAVIGATION, roles, !!isSuperAdmin);
   }, [user, roleOverride]);
 }
 

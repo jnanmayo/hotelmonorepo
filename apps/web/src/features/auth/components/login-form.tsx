@@ -18,6 +18,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { asRoute } from '@/lib/navigation';
 
 import { loginSchema, type LoginInput } from '@tungaos/shared/validation';
+import { getDefaultRouteForRoles } from '@/hooks/use-navigation';
 
 export function LoginForm() {
   const router = useRouter();
@@ -56,8 +57,17 @@ export function LoginForm() {
         router.push(`${AUTH_ROUTES.chooseRole}?redirect=${encodeURIComponent(redirect)}`);
         return;
       }
+      let target = redirect;
+      if (target) {
+        const defaultRoute = getDefaultRouteForRoles(result.user.roles);
+        if (defaultRoute) {
+          target = defaultRoute;
+        } else {
+          target = '/dashboard';
+        }
+      }
       toast.success('Welcome back');
-      router.push(asRoute(redirect));
+      router.push(asRoute(target));
     } catch {
       setError('Invalid credentials. Please check your email and password.');
     }
@@ -70,7 +80,10 @@ export function LoginForm() {
       footer={
         <p className="text-muted-foreground">
           New hotel?{' '}
-          <Link href={AUTH_ROUTES.register} className="font-medium text-tunga-navy hover:text-tunga-gold">
+          <Link
+            href={AUTH_ROUTES.register}
+            className="text-tunga-navy hover:text-tunga-gold font-medium"
+          >
             Register your property
           </Link>
         </p>
@@ -100,7 +113,7 @@ export function LoginForm() {
 
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded border-input" {...register('rememberMe')} />
+            <input type="checkbox" className="border-input rounded" {...register('rememberMe')} />
             Remember me
           </label>
           <Link href={AUTH_ROUTES.forgotPassword} className="text-tunga-navy hover:text-tunga-gold">
@@ -117,7 +130,7 @@ export function LoginForm() {
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+            <span className="bg-card text-muted-foreground px-2">Or continue with</span>
           </div>
         </div>
 
