@@ -49,11 +49,13 @@ export function EnterpriseAppShell({
   }, [pathname, addRecent]);
 
   return (
-    <div className={cn('flex min-h-screen flex-col bg-background', className)}>
+    <div className={cn('bg-background flex h-screen flex-col overflow-hidden', className)}>
       <SkipNav />
-      <div className="flex min-h-0 flex-1">
-        {inCms ? <CmsSidebar /> : inChannels ? <ChannelSidebar /> : <AppSidebar />}
-        <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 flex-col">
+          {inCms ? <CmsSidebar /> : inChannels ? <ChannelSidebar /> : <AppSidebar />}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TopNavbar
             hotelName={hotelName}
             userName={userName}

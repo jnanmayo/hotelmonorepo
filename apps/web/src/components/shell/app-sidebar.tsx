@@ -145,23 +145,23 @@ function SidebarContent({
   const toggleSidebar = useShellStore((s) => s.toggleSidebar);
 
   return (
-    <>
+    <div className="flex h-full flex-col">
       <div
         className={cn(
-          'border-sidebar-border flex h-16 items-center border-b px-4',
+          'border-sidebar-border flex h-16 items-center border-b px-4 shrink-0',
           collapsed && 'justify-center',
         )}
       >
         <Logo variant={collapsed ? 'mark' : 'full'} size="sm" inverted showVendor={!collapsed} />
       </div>
-      <ScrollArea className="flex-1 py-4">
+      <ScrollArea className="flex-1 min-h-0 py-4">
         <nav className="space-y-0.5 px-3" aria-label="Main navigation" onClick={onNavigate}>
           {items.map((item) => (
             <NavLink key={item.id} item={item} collapsed={collapsed} />
           ))}
         </nav>
       </ScrollArea>
-      <div className="border-sidebar-border border-t p-3">
+      <div className="border-sidebar-border border-t p-3 shrink-0">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -172,7 +172,7 @@ function SidebarContent({
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -202,7 +202,7 @@ export function AppSidebar() {
         <motion.aside
           animate={{ width: collapsed ? 72 : 256 }}
           transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-          className="bg-sidebar text-sidebar-foreground relative hidden h-full shrink-0 flex-col lg:flex"
+          className="bg-sidebar text-sidebar-foreground relative hidden h-full shrink-0 flex-col min-h-0 lg:flex"
         >
           <SidebarContent collapsed={collapsed} />
         </motion.aside>

@@ -57,8 +57,8 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
   const toggleSidebar = useShellStore((s) => s.toggleSidebar);
 
   return (
-    <>
-      <div className={cn('flex h-16 items-center border-b border-sidebar-border px-4', collapsed && 'justify-center')}>
+    <div className="flex h-full flex-col">
+      <div className={cn('flex h-16 items-center border-b border-sidebar-border px-4 shrink-0', collapsed && 'justify-center')}>
         {!collapsed ? (
           <div className="flex min-w-0 flex-col">
             <Radio className="h-5 w-5 text-secondary" />
@@ -72,7 +72,7 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
       </div>
 
       {!collapsed && (
-        <div className="border-b border-sidebar-border px-3 py-2">
+        <div className="border-b border-sidebar-border px-3 py-2 shrink-0">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs text-sidebar-foreground/70" asChild>
             <Link href={asRoute('/app/dashboard')} onClick={onNavigate}>
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -82,7 +82,7 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
         </div>
       )}
 
-      <ScrollArea className="flex-1 py-3">
+      <ScrollArea className="flex-1 min-h-0 py-3">
         <nav className="space-y-0.5 px-3" aria-label="Channel Manager navigation" onClick={onNavigate}>
           {items.map((item) => (
             <ChannelNavLink key={item.id} item={item} collapsed={collapsed} />
@@ -91,7 +91,7 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
       </ScrollArea>
 
       {!collapsed && (
-        <div className="border-t border-sidebar-border p-3">
+        <div className="border-t border-sidebar-border p-3 shrink-0">
           <Button variant="outline" size="sm" className="w-full gap-2 text-xs" asChild>
             <Link href={asRoute('/app/reservations')}>
               <ExternalLink className="h-3.5 w-3.5" />
@@ -101,7 +101,7 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
         </div>
       )}
 
-      <div className="border-t border-sidebar-border p-3">
+      <div className="border-t border-sidebar-border p-3 shrink-0">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -111,7 +111,7 @@ function SidebarInner({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -134,7 +134,7 @@ export function ChannelSidebar() {
         <motion.aside
           animate={{ width: collapsed ? 72 : 256 }}
           transition={{ duration: 0.25 }}
-          className="relative hidden h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex"
+          className="relative hidden h-full shrink-0 flex-col min-h-0 bg-sidebar text-sidebar-foreground lg:flex"
         >
           <SidebarInner collapsed={collapsed} />
         </motion.aside>

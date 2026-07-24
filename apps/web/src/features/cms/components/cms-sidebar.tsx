@@ -115,8 +115,8 @@ function CmsSidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
   const toggleSidebar = useShellStore((s) => s.toggleSidebar);
 
   return (
-    <>
-      <div className={cn('flex h-16 items-center border-b border-sidebar-border px-4', collapsed && 'justify-center')}>
+    <div className="flex h-full flex-col">
+      <div className={cn('flex h-16 items-center border-b border-sidebar-border px-4 shrink-0', collapsed && 'justify-center')}>
         {!collapsed ? (
           <div className="flex min-w-0 flex-col">
             <Logo variant="mark" size="sm" inverted />
@@ -130,7 +130,7 @@ function CmsSidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
       </div>
 
       {!collapsed && (
-        <div className="border-b border-sidebar-border px-3 py-2">
+        <div className="border-b border-sidebar-border px-3 py-2 shrink-0">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs text-sidebar-foreground/70" asChild>
             <Link href={asRoute('/app/dashboard')} onClick={onNavigate}>
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -140,7 +140,7 @@ function CmsSidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
         </div>
       )}
 
-      <ScrollArea className="flex-1 py-3">
+      <ScrollArea className="flex-1 min-h-0 py-3">
         <nav className="space-y-0.5 px-3" aria-label="CMS navigation" onClick={onNavigate}>
           {items.map((item) => (
             <CmsNavLink key={item.id} item={item} collapsed={collapsed} />
@@ -149,7 +149,7 @@ function CmsSidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
       </ScrollArea>
 
       {!collapsed && (
-        <div className="border-t border-sidebar-border p-3">
+        <div className="border-t border-sidebar-border p-3 shrink-0">
           <Button variant="outline" size="sm" className="w-full gap-2 text-xs" asChild>
             <a href="/" target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-3.5 w-3.5" />
@@ -159,7 +159,7 @@ function CmsSidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
         </div>
       )}
 
-      <div className="border-t border-sidebar-border p-3">
+      <div className="border-t border-sidebar-border p-3 shrink-0">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -170,7 +170,7 @@ function CmsSidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -194,7 +194,7 @@ export function CmsSidebar() {
         <motion.aside
           animate={{ width: collapsed ? 72 : 256 }}
           transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-          className="relative hidden h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex"
+          className="relative hidden h-full shrink-0 flex-col min-h-0 bg-sidebar text-sidebar-foreground lg:flex"
         >
           <CmsSidebarContent collapsed={collapsed} />
         </motion.aside>
